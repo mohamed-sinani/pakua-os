@@ -1,0 +1,23 @@
+{
+    "name": "pakuaos/pakua",
+    "description": "Universal OS and software setup manager CLI — Find. Verify. Install.",
+    "type": "project",
+    "license": "MIT",
+    "keywords": ["cli", "download", "operating-system", "software", "iso", "package-manager"],
+    "autoload": {
+        "psr-4": {
+            "PakuaOS\\": "src/"
+        }
+    },
+    "bin": [
+        "bin/pakuaos"
+    ],
+    "require": {
+        "php": "^8.2",
+        "ext-curl": "*",
+        "ext-json": "*",
+        "ext-mbstring": "*",
+        "symfony/console": "^7.0",
+        "guzzlehttp/guzzle": "^7.0"
+    }
+}
