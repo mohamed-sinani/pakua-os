@@ -395,3 +395,113 @@ a:hover { color: var(--sky-dark); }
     .footer-grid { grid-template-columns: 1fr; }
     .os-tabs { flex-wrap: wrap; }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   DOWNLOAD PROGRESS — Live progress bar like the terminal
+   ═══════════════════════════════════════════════════════════════ */
+.dl-progress-wrap {
+    background: #fff; border-radius: var(--radius); padding: 28px;
+    border: 1px solid var(--border); box-shadow: var(--shadow-md);
+    max-width: 700px; margin: 0 auto;
+}
+.dl-progress-wrap.downloading {
+    border-color: var(--sky-200);
+    box-shadow: var(--shadow-glow);
+}
+.dl-progress-title {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 20px;
+}
+.dl-progress-title h2 { font-size: 18px; font-weight: 600; flex: 1; }
+.dl-progress-title .dl-status-badge {
+    padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
+}
+.dl-status-active { background: var(--sky-100); color: var(--sky-dark); }
+.dl-status-done { background: #dcfce7; color: #166534; }
+.dl-status-error { background: #fee2e2; color: #991b1b; }
+
+/* The bar track */
+.dl-bar-track {
+    width: 100%; height: 28px; background: var(--sky-50);
+    border-radius: 14px; overflow: hidden; position: relative;
+    border: 1px solid var(--sky-100);
+}
+.dl-bar-fill {
+    height: 100%; width: 0%; border-radius: 14px;
+    background: linear-gradient(90deg, var(--sky), var(--sky-dark), #6366f1);
+    background-size: 200% 100%;
+    animation: barShimmer 2s ease infinite;
+    transition: width 0.25s ease;
+    position: relative;
+    box-shadow: 0 0 12px var(--sky-glow);
+}
+@keyframes barShimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+.dl-bar-pct {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: var(--text);
+    z-index: 2; text-shadow: 0 0 4px #fff, 0 0 8px #fff;
+}
+
+/* Stats row */
+.dl-stats {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 12px; margin-top: 16px;
+}
+.dl-stat {
+    text-align: center; padding: 10px 8px;
+    background: var(--sky-50); border-radius: 10px;
+}
+.dl-stat-val { font-size: 16px; font-weight: 700; color: var(--sky-dark); }
+.dl-stat-label { font-size: 11px; color: var(--text-dim); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Filename & details */
+.dl-file-info {
+    display: flex; align-items: center; gap: 10px;
+    margin-top: 16px; padding: 12px 16px;
+    background: var(--bg-soft); border-radius: 10px;
+    font-size: 13px; color: var(--text-muted);
+}
+.dl-file-info .dl-file-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--sky-100); font-size: 18px; flex-shrink: 0;
+}
+.dl-file-info .dl-file-name { font-weight: 600; color: var(--text); }
+.dl-file-info .dl-file-url { font-size: 11px; color: var(--text-dim); word-break: break-all; margin-top: 2px; }
+
+/* Error message */
+.dl-error-msg {
+    margin-top: 12px; padding: 12px 16px;
+    background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px;
+    color: #991b1b; font-size: 13px;
+}
+
+/* Complete actions */
+.dl-complete-actions {
+    display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap;
+}
+.btn-download-ready {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 14px 28px; border-radius: 12px; font-size: 15px; font-weight: 600;
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    color: #fff; border: none; cursor: pointer; font-family: inherit;
+    transition: all .2s; text-decoration: none;
+    box-shadow: 0 0 16px rgba(22,163,74,0.3);
+}
+.btn-download-ready:hover { filter: brightness(1.1); transform: translateY(-2px); box-shadow: 0 4px 20px rgba(22,163,74,0.4); color: #fff; }
+.btn-download-ready:active { transform: scale(0.98); }
+.btn-another {
+    padding: 14px 24px; border-radius: 12px; font-size: 14px; font-weight: 500;
+    background: var(--sky-50); color: var(--sky-dark); border: 1px solid var(--sky-200);
+    cursor: pointer; font-family: inherit; transition: all .2s;
+}
+.btn-another:hover { background: var(--sky-100); }
+
+@media (max-width: 600px) {
+    .dl-stats { grid-template-columns: repeat(2, 1fr); }
+    .dl-complete-actions { flex-direction: column; }
+    .btn-download-ready, .btn-another { width: 100%; justify-content: center; }
+}

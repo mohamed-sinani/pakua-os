@@ -168,6 +168,9 @@ final class Downloader
         $bar = new ProgressBar($totalSize > 0 ? $totalSize : 1);
         if ($startByte > 0) $bar->set($startByte);
 
+        ob_implicit_flush(true);
+        if (ob_get_level()) ob_end_flush();
+
         $lastTime = microtime(true);
 
         curl_setopt($ch, CURLOPT_PROGRESSFUNCTION, function (
@@ -176,12 +179,17 @@ final class Downloader
             $now = microtime(true);
             if ($now - $lastTime >= 0.25) {
                 $lastTime = $now;
+                $bar->set((int)($startByte + $dlNow));
+                flush();
             }
-            $bar->set((int)($startByte + $dlNow));
             return 0;
         });
 
         curl_setopt($ch, CURLOPT_FILE, $fp);
+
+        echo "\n";
+        flush();
+
         $success = curl_exec($ch);
         $error = curl_error($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);

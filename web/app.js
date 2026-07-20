@@ -1,6 +1,8 @@
 /* ═══════════════════════════════════════════════════════════════
-   PakuaOS Web — App Logic
+   PakuaOS Web — App Logic with SSE Download Engine
    ═══════════════════════════════════════════════════════════════ */
+
+const API_BASE = 'api';
 
 // ─── Data ───
 const OS_DATA = {
@@ -16,7 +18,7 @@ const OS_DATA = {
         { name: 'Manjaro 25.0', icon: '🟢', desc: 'Arch-based with easy installer and GUI package manager.', arch: 'x64, ARM64', size: '3.4 GB', verified: true, url: 'https://manjaro.org/download/' },
         { name: 'Zorin OS 18', icon: '🔵', desc: 'Windows-like Linux for beginners — beautiful desktop.', arch: 'x64', size: '3.8 GB', verified: true, url: 'https://zorin.com/os/download/' },
         { name: 'Elementary OS 8', icon: '⚪', desc: 'macOS-inspired Linux with Pantheon desktop.', arch: 'x64', size: '2.6 GB', verified: true, url: 'https://elementary.io/' },
-        { name: 'NixOS 25.05', icon: '雪花', desc: 'Declarative, reproducible Linux — Nix package manager.', arch: 'x64, ARM64', size: '1.2 GB', verified: true, url: 'https://nixos.org/download/' },
+        { name: 'NixOS 25.05', icon: '❄️', desc: 'Declarative, reproducible Linux — Nix package manager.', arch: 'x64, ARM64', size: '1.2 GB', verified: true, url: 'https://nixos.org/download/' },
     ],
     windows: [
         { name: 'Windows 11 25H2', icon: '🪟', desc: 'Latest Windows 11 with AI features and Copilot.', arch: 'x64', size: '6.3 GB', verified: true, popular: true, url: 'https://www.microsoft.com/software-download/windows11' },
@@ -32,27 +34,27 @@ const OS_DATA = {
 };
 
 const SOFTWARE_DATA = [
-    { name: 'Google Chrome', icon: '🌐', desc: 'Fast, secure browser by Google', platforms: ['Windows', 'macOS', 'Linux'], category: 'Browser' },
-    { name: 'Mozilla Firefox', icon: '🦊', desc: 'Privacy-focused open-source browser', platforms: ['Windows', 'macOS', 'Linux'], category: 'Browser' },
-    { name: 'Visual Studio Code', icon: '💙', desc: 'Popular code editor by Microsoft', platforms: ['Windows', 'macOS', 'Linux'], category: 'Development' },
-    { name: '7-Zip', icon: '📦', desc: 'Free file archiver with high compression', platforms: ['Windows'], category: 'Utility' },
-    { name: 'VLC Media Player', icon: '🎬', desc: 'Open-source media player — plays everything', platforms: ['Windows', 'macOS', 'Linux'], category: 'Media' },
-    { name: 'GIMP', icon: '🎨', desc: 'GNU Image Manipulation Program — Photoshop alternative', platforms: ['Windows', 'macOS', 'Linux'], category: 'Graphics' },
-    { name: 'OBS Studio', icon: '🎥', desc: 'Free screen recording and streaming software', platforms: ['Windows', 'macOS', 'Linux'], category: 'Media' },
-    { name: 'Notepad++', icon: '📝', desc: 'Lightweight Windows text editor for developers', platforms: ['Windows'], category: 'Development' },
-    { name: 'Blender', icon: '🧊', desc: 'Professional 3D creation suite', platforms: ['Windows', 'macOS', 'Linux'], category: 'Graphics' },
-    { name: ' LibreOffice', icon: '📄', desc: 'Free office suite — Writer, Calc, Impress', platforms: ['Windows', 'macOS', 'Linux'], category: 'Productivity' },
-    { name: 'Brave Browser', icon: '🦁', desc: 'Privacy browser with built-in ad blocker', platforms: ['Windows', 'macOS', 'Linux'], category: 'Browser' },
-    { name: 'Node.js', icon: '💚', desc: 'JavaScript runtime for server-side apps', platforms: ['Windows', 'macOS', 'Linux'], category: 'Development' },
-    { name: 'Git', icon: '📂', desc: 'Distributed version control system', platforms: ['Windows', 'macOS', 'Linux'], category: 'Development' },
-    { name: 'Docker Desktop', icon: '🐳', desc: 'Container platform for modern apps', platforms: ['Windows', 'macOS', 'Linux'], category: 'Development' },
-    { name: 'Thunderbird', icon: '📧', desc: 'Free email client by Mozilla', platforms: ['Windows', 'macOS', 'Linux'], category: 'Productivity' },
-    { name: 'Inkscape', icon: '✏️', desc: 'Professional vector graphics editor', platforms: ['Windows', 'macOS', 'Linux'], category: 'Graphics' },
-    { name: 'Audacity', icon: '🎵', desc: 'Free audio editor and recorder', platforms: ['Windows', 'macOS', 'Linux'], category: 'Media' },
-    { name: 'VirtualBox', icon: '📦', desc: 'Free virtualization software by Oracle', platforms: ['Windows', 'macOS', 'Linux'], category: 'Utility' },
+    { name: 'Google Chrome', icon: '🌐', desc: 'Fast, secure browser by Google', platforms: ['Windows', 'macOS', 'Linux'], category: 'Browser', url: 'https://www.google.com/chrome/' },
+    { name: 'Mozilla Firefox', icon: '🦊', desc: 'Privacy-focused open-source browser', platforms: ['Windows', 'macOS', 'Linux'], category: 'Browser', url: 'https://www.mozilla.org/firefox/' },
+    { name: 'Visual Studio Code', icon: '💙', desc: 'Popular code editor by Microsoft', platforms: ['Windows', 'macOS', 'Linux'], category: 'Development', url: 'https://code.visualstudio.com/' },
+    { name: '7-Zip', icon: '📦', desc: 'Free file archiver with high compression', platforms: ['Windows'], category: 'Utility', url: 'https://www.7-zip.org/' },
+    { name: 'VLC Media Player', icon: '🎬', desc: 'Open-source media player — plays everything', platforms: ['Windows', 'macOS', 'Linux'], category: 'Media', url: 'https://www.videolan.org/' },
+    { name: 'GIMP', icon: '🎨', desc: 'GNU Image Manipulation Program', platforms: ['Windows', 'macOS', 'Linux'], category: 'Graphics', url: 'https://www.gimp.org/' },
+    { name: 'OBS Studio', icon: '🎥', desc: 'Free screen recording and streaming software', platforms: ['Windows', 'macOS', 'Linux'], category: 'Media', url: 'https://obsproject.com/' },
+    { name: 'Notepad++', icon: '📝', desc: 'Lightweight Windows text editor for developers', platforms: ['Windows'], category: 'Development', url: 'https://notepad-plus-plus.org/' },
+    { name: 'Blender', icon: '🧊', desc: 'Professional 3D creation suite', platforms: ['Windows', 'macOS', 'Linux'], category: 'Graphics', url: 'https://www.blender.org/' },
+    { name: 'LibreOffice', icon: '📄', desc: 'Free office suite — Writer, Calc, Impress', platforms: ['Windows', 'macOS', 'Linux'], category: 'Productivity', url: 'https://www.libreoffice.org/' },
+    { name: 'Brave Browser', icon: '🦁', desc: 'Privacy browser with built-in ad blocker', platforms: ['Windows', 'macOS', 'Linux'], category: 'Browser', url: 'https://brave.com/' },
+    { name: 'Node.js', icon: '💚', desc: 'JavaScript runtime for server-side apps', platforms: ['Windows', 'macOS', 'Linux'], category: 'Development', url: 'https://nodejs.org/' },
+    { name: 'Git', icon: '📂', desc: 'Distributed version control system', platforms: ['Windows', 'macOS', 'Linux'], category: 'Development', url: 'https://git-scm.com/' },
+    { name: 'Docker Desktop', icon: '🐳', desc: 'Container platform for modern apps', platforms: ['Windows', 'macOS', 'Linux'], category: 'Development', url: 'https://www.docker.com/' },
+    { name: 'Thunderbird', icon: '📧', desc: 'Free email client by Mozilla', platforms: ['Windows', 'macOS', 'Linux'], category: 'Productivity', url: 'https://www.thunderbird.net/' },
+    { name: 'Inkscape', icon: '✏️', desc: 'Professional vector graphics editor', platforms: ['Windows', 'macOS', 'Linux'], category: 'Graphics', url: 'https://inkscape.org/' },
+    { name: 'Audacity', icon: '🎵', desc: 'Free audio editor and recorder', platforms: ['Windows', 'macOS', 'Linux'], category: 'Media', url: 'https://www.audacityteam.org/' },
+    { name: 'VirtualBox', icon: '📦', desc: 'Free virtualization software by Oracle', platforms: ['Windows', 'macOS', 'Linux'], category: 'Utility', url: 'https://www.virtualbox.org/' },
 ];
 
-const downloadHistory = [];
+let downloadHistory = [];
 
 // ─── Navigation ───
 function showSection(name) {
@@ -79,7 +81,6 @@ document.querySelectorAll('.nav-link').forEach(link => {
     });
 });
 
-// ─── Hamburger ───
 document.getElementById('hamburger').addEventListener('click', () => {
     document.getElementById('mainNav').classList.toggle('open');
 });
@@ -98,9 +99,7 @@ function renderOS(tab) {
         <div class="os-card" onclick="showOSDetail('${tab}', '${os.name}')">
             <div class="os-card-header">
                 <div class="os-card-logo">${os.icon}</div>
-                <div>
-                    <div class="os-card-name">${os.name}</div>
-                </div>
+                <div><div class="os-card-name">${os.name}</div></div>
                 ${os.popular ? '<span class="os-card-badge badge-popular">Popular</span>' : ''}
                 ${os.verified ? '<span class="os-card-badge badge-verified">✓ Verified</span>' : ''}
             </div>
@@ -116,11 +115,8 @@ function renderOS(tab) {
 function showOSDetail(tab, name) {
     const os = OS_DATA[tab].find(o => o.name === name);
     if (!os) return;
-
     document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
-    const section = document.getElementById('section-download');
-    section.style.display = 'block';
-
+    document.getElementById('section-download').style.display = 'block';
     document.getElementById('download-detail').innerHTML = `
         <button class="btn-back" onclick="showSection('os')">← Back to Operating Systems</button>
         <div class="download-detail-card">
@@ -130,7 +126,7 @@ function showOSDetail(tab, name) {
             <div class="detail-row"><div class="detail-label">File Size</div><div class="detail-value">${os.size}</div></div>
             <div class="detail-row"><div class="detail-label">Verification</div><div class="detail-value">${os.verified ? '✅ Verified against official checksum' : '⚠️ Unverified'}</div></div>
             <div class="detail-row"><div class="detail-label">Source</div><div class="detail-value"><a href="${os.url}" target="_blank" rel="noopener">${os.url}</a></div></div>
-            <button class="btn-download" onclick="startDownload('${os.name}', '${os.url}', '${os.size}')">
+            <button class="btn-download" onclick="startDownload('${os.name.replace(/'/g, "\\'")}', '${os.url}', '${os.size}', 'os')">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11M7.5 10.5 12 15l4.5-4.5M5 20h14"/></svg>
                 Download ${os.name}
             </button>
@@ -141,8 +137,7 @@ function showOSDetail(tab, name) {
 
 // ─── Software ───
 function renderSoftware(items) {
-    const grid = document.getElementById('software-grid');
-    grid.innerHTML = items.map(sw => `
+    document.getElementById('software-grid').innerHTML = items.map(sw => `
         <div class="software-card" onclick="showSoftwareDetail('${sw.name}')">
             <div class="software-card-icon">${sw.icon}</div>
             <div class="software-card-info">
@@ -158,22 +153,16 @@ function renderSoftware(items) {
 
 function filterSoftware(q) {
     q = q.toLowerCase();
-    const filtered = SOFTWARE_DATA.filter(s =>
-        s.name.toLowerCase().includes(q) ||
-        s.desc.toLowerCase().includes(q) ||
-        s.category.toLowerCase().includes(q)
-    );
-    renderSoftware(filtered);
+    renderSoftware(SOFTWARE_DATA.filter(s =>
+        s.name.toLowerCase().includes(q) || s.desc.toLowerCase().includes(q) || s.category.toLowerCase().includes(q)
+    ));
 }
 
 function showSoftwareDetail(name) {
     const sw = SOFTWARE_DATA.find(s => s.name.trim() === name.trim());
     if (!sw) return;
-
     document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
-    const section = document.getElementById('section-download');
-    section.style.display = 'block';
-
+    document.getElementById('section-download').style.display = 'block';
     document.getElementById('download-detail').innerHTML = `
         <button class="btn-back" onclick="showSection('software')">← Back to Software</button>
         <div class="download-detail-card">
@@ -182,7 +171,8 @@ function showSoftwareDetail(name) {
             <div class="detail-row"><div class="detail-label">Category</div><div class="detail-value">${sw.category}</div></div>
             <div class="detail-row"><div class="detail-label">Platforms</div><div class="detail-value">${sw.platforms.join(', ')}</div></div>
             <div class="detail-row"><div class="detail-label">Verification</div><div class="detail-value">✅ Verified against official source</div></div>
-            <button class="btn-download" onclick="startDownload('${sw.name.trim()}', '#', 'N/A')">
+            <div class="detail-row"><div class="detail-label">Official Site</div><div class="detail-value"><a href="${sw.url}" target="_blank" rel="noopener">${sw.url}</a></div></div>
+            <button class="btn-download" onclick="startDownload('${sw.name.trim().replace(/'/g, "\\'")}', '${sw.url}', 'N/A', 'programs')">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11M7.5 10.5 12 15l4.5-4.5M5 20h14"/></svg>
                 Download ${sw.name.trim()}
             </button>
@@ -210,15 +200,11 @@ function performGlobalSearch() {
     if (!q) return;
 
     const results = [];
-
-    // Search OS
     Object.values(OS_DATA).flat().forEach(os => {
         if (os.name.toLowerCase().includes(q) || os.desc.toLowerCase().includes(q)) {
-            results.push({ type: 'os', icon: os.icon, name: os.name, desc: os.desc, meta: os.arch + ' • ' + os.size, action: 'Download ISO' });
+            results.push({ type: 'os', tab: Object.keys(OS_DATA).find(t => OS_DATA[t].includes(os)), icon: os.icon, name: os.name, desc: os.desc, meta: os.arch + ' • ' + os.size, action: 'Download ISO' });
         }
     });
-
-    // Search Software
     SOFTWARE_DATA.forEach(sw => {
         if (sw.name.toLowerCase().includes(q) || sw.desc.toLowerCase().includes(q) || sw.category.toLowerCase().includes(q)) {
             results.push({ type: 'software', icon: sw.icon, name: sw.name.trim(), desc: sw.desc, meta: sw.platforms.join(', '), action: 'Download' });
@@ -227,18 +213,14 @@ function performGlobalSearch() {
 
     const container = document.getElementById('search-results');
     if (results.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-icon">🔍</div>
-                <p>No results found for "${q}". Try different keywords.</p>
-            </div>`;
+        container.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><p>No results found for "${q}". Try different keywords.</p></div>`;
         return;
     }
 
     container.innerHTML = `
         <p style="color:var(--text-muted);font-size:14px;margin-bottom:16px;">Found ${results.length} result${results.length > 1 ? 's' : ''} for "${q}"</p>
         ${results.map(r => `
-            <div class="result-card" onclick="${r.type === 'os' ? `showOSDetailFromSearch('${r.name}')` : `showSoftwareDetail('${r.name}')`}">
+            <div class="result-card" onclick="${r.type === 'os' ? `showOSDetail('${r.tab}', '${r.name}')` : `showSoftwareDetail('${r.name}')`}">
                 <div class="result-icon">${r.icon}</div>
                 <div class="result-info">
                     <h3>${r.name}</h3>
@@ -251,57 +233,250 @@ function performGlobalSearch() {
     `;
 }
 
-function showOSDetailFromSearch(name) {
-    for (const tab of ['linux', 'windows', 'macos']) {
-        const os = OS_DATA[tab].find(o => o.name === name);
-        if (os) { showOSDetail(tab, name); return; }
-    }
+document.getElementById('globalSearch').addEventListener('keypress', e => { if (e.key === 'Enter') performGlobalSearch(); });
+document.getElementById('heroSearch').addEventListener('keypress', e => { if (e.key === 'Enter') performSearch(); });
+
+// ═══════════════════════════════════════════════════════════════
+//  DOWNLOAD ENGINE — SSE-based real-time progress
+// ═══════════════════════════════════════════════════════════════
+
+function formatBytes(bytes) {
+    if (bytes <= 0) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.min(Math.floor((String(bytes).length - 1) / 3), units.length - 1);
+    return (bytes / Math.pow(1024, i)).toFixed(1) + ' ' + units[i];
 }
 
-document.getElementById('globalSearch').addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') performGlobalSearch();
-});
-document.getElementById('heroSearch').addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') performSearch();
-});
+function startDownload(name, url, size, category) {
+    document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
+    const section = document.getElementById('section-download');
+    section.style.display = 'block';
+
+    const safeName = name.replace(/[^\w\s\-\.]/g, '').replace(/\s+/g, '_').substring(0, 120) || 'download';
+
+    document.getElementById('download-detail').innerHTML = `
+        <div class="dl-progress-wrap downloading" id="dl-wrap">
+            <div class="dl-progress-title">
+                <h2 id="dl-title">Preparing download...</h2>
+                <span class="dl-status-badge dl-status-active" id="dl-badge">Connecting</span>
+            </div>
+
+            <div class="dl-bar-track">
+                <div class="dl-bar-fill" id="dl-fill"></div>
+                <div class="dl-bar-pct" id="dl-pct">0%</div>
+            </div>
+
+            <div class="dl-stats">
+                <div class="dl-stat">
+                    <div class="dl-stat-val" id="dl-speed">—</div>
+                    <div class="dl-stat-label">Speed</div>
+                </div>
+                <div class="dl-stat">
+                    <div class="dl-stat-val" id="dl-downloaded">0 B</div>
+                    <div class="dl-stat-label">Downloaded</div>
+                </div>
+                <div class="dl-stat">
+                    <div class="dl-stat-val" id="dl-total">${size}</div>
+                    <div class="dl-stat-label">Total</div>
+                </div>
+                <div class="dl-stat">
+                    <div class="dl-stat-val" id="dl-eta">—</div>
+                    <div class="dl-stat-label">ETA</div>
+                </div>
+            </div>
+
+            <div class="dl-file-info">
+                <div class="dl-file-icon">📦</div>
+                <div>
+                    <div class="dl-file-name" id="dl-filename">${safeName}</div>
+                    <div class="dl-file-url" id="dl-fileurl">${url}</div>
+                </div>
+            </div>
+
+            <div id="dl-error" style="display:none"></div>
+            <div id="dl-complete" style="display:none"></div>
+        </div>
+    `;
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Build POST body
+    const body = new URLSearchParams();
+    body.append('url', url);
+    body.append('name', safeName);
+    body.append('category', category || 'other');
+
+    const fillEl  = document.getElementById('dl-fill');
+    const pctEl   = document.getElementById('dl-pct');
+    const speedEl = document.getElementById('dl-speed');
+    const dlEl    = document.getElementById('dl-downloaded');
+    const totalEl = document.getElementById('dl-total');
+    const etaEl   = document.getElementById('dl-eta');
+    const titleEl = document.getElementById('dl-title');
+    const badgeEl = document.getElementById('dl-badge');
+    const errEl   = document.getElementById('dl-error');
+    const compEl  = document.getElementById('dl-complete');
+    const wrapEl  = document.getElementById('dl-wrap');
+
+    // Use fetch + ReadableStream for SSE (better browser compat than EventSource for POST)
+    fetch(API_BASE + '/download.php', {
+        method: 'POST',
+        body: body,
+    }).then(response => {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        function readChunk() {
+            reader.read().then(({ done, value }) => {
+                if (done) return;
+                buffer += decoder.decode(value, { stream: true });
+
+                // Process complete SSE messages
+                const lines = buffer.split('\n');
+                buffer = lines.pop(); // keep incomplete line
+
+                let eventType = '';
+                for (const line of lines) {
+                    if (line.startsWith('event: ')) {
+                        eventType = line.substring(7).trim();
+                    } else if (line.startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(line.substring(6));
+                            handleDownloadEvent(eventType, data);
+                        } catch (e) {}
+                    }
+                }
+                readChunk();
+            });
+        }
+        readChunk();
+    }).catch(err => {
+        titleEl.textContent = 'Connection failed';
+        badgeEl.textContent = 'Error';
+        badgeEl.className = 'dl-status-badge dl-status-error';
+        wrapEl.classList.remove('downloading');
+        errEl.style.display = 'block';
+        errEl.innerHTML = `<div class="dl-error-msg">Failed to connect to download server: ${err.message}</div>`;
+    });
+
+    function handleDownloadEvent(event, data) {
+        switch (event) {
+            case 'start':
+                titleEl.textContent = 'Downloading ' + data.name;
+                badgeEl.textContent = 'Active';
+                document.getElementById('dl-filename').textContent = data.name;
+                document.getElementById('dl-fileurl').textContent = data.url;
+                break;
+
+            case 'info':
+                if (data.total_human) totalEl.textContent = data.total_human;
+                break;
+
+            case 'progress':
+                const pct = Math.min(data.pct, 100);
+                fillEl.style.width = pct + '%';
+                pctEl.textContent = pct.toFixed(1) + '%';
+                speedEl.textContent = data.speed_human || '—';
+                dlEl.textContent = data.downloaded_human || '—';
+                totalEl.textContent = data.total_human || '—';
+                etaEl.textContent = data.eta || '—';
+                if (data.total_human) totalEl.textContent = data.total_human;
+                break;
+
+            case 'complete':
+                fillEl.style.width = '100%';
+                fillEl.style.background = 'linear-gradient(90deg, #16a34a, #15803d)';
+                pctEl.textContent = '100%';
+                titleEl.textContent = 'Download complete!';
+                badgeEl.textContent = 'Done';
+                badgeEl.className = 'dl-status-badge dl-status-done';
+                wrapEl.classList.remove('downloading');
+                speedEl.textContent = data.speed_avg || '—';
+                etaEl.textContent = data.time || '—';
+                dlEl.textContent = data.size_human || '—';
+
+                compEl.style.display = 'block';
+                compEl.innerHTML = `
+                    <div class="dl-complete-actions">
+                        <a class="btn-download-ready" href="${data.file_path}" download="${data.name}">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11M7.5 10.5 12 15l4.5-4.5M5 20h14"/></svg>
+                            Save File
+                        </a>
+                        <button class="btn-another" onclick="location.reload()">Download Another</button>
+                    </div>
+                    <div style="margin-top:12px;font-size:13px;color:var(--text-muted)">
+                        Avg speed: ${data.speed_avg || '—'} • Time: ${data.time || '—'}
+                    </div>
+                `;
+
+                // Add to history
+                downloadHistory.unshift({
+                    name: data.name, url: '', size: data.size_human,
+                    date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
+                    status: 'completed', filePath: data.file_path
+                });
+                break;
+
+            case 'error':
+                titleEl.textContent = 'Download failed';
+                badgeEl.textContent = 'Error';
+                badgeEl.className = 'dl-status-badge dl-status-error';
+                fillEl.style.background = 'linear-gradient(90deg, #dc2626, #b91c1c)';
+                wrapEl.classList.remove('downloading');
+                errEl.style.display = 'block';
+                errEl.innerHTML = `<div class="dl-error-msg">
+                    <strong>Download failed:</strong> ${data.message}<br>
+                    <small>HTTP Code: ${data.http_code || 'N/A'}</small>
+                </div>
+                <div style="margin-top:12px">
+                    <button class="btn-another" onclick="location.reload()">Try Again</button>
+                </div>`;
+                break;
+        }
+    }
+}
 
 // ─── History ───
 function renderHistory() {
     const container = document.getElementById('history-list');
-    if (downloadHistory.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-icon">📥</div>
-                <p>No downloads yet. Start by searching for something!</p>
-            </div>`;
-        return;
-    }
-
-    container.innerHTML = downloadHistory.map(d => `
-        <div class="history-item">
-            <div class="history-icon ${d.status}">${d.status === 'completed' ? '✓' : d.status === 'failed' ? '✗' : '↻'}</div>
-            <div class="history-info">
-                <h3>${d.name}</h3>
-                <p>${d.date} • ${d.size}</p>
-            </div>
-            <span class="history-status status-${d.status}">${d.status === 'completed' ? 'Ready' : d.status === 'failed' ? 'Failed' : 'Resumable'}</span>
-        </div>
-    `).join('');
-}
-
-function startDownload(name, url, size) {
-    downloadHistory.unshift({
-        name: name,
-        url: url,
-        size: size,
-        date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
-        status: 'completed'
-    });
-    renderHistory();
-    alert(`Download started: ${name}\n\nIn the real PakuaOS, this would begin downloading the file to your device.`);
+    // Try loading from API first
+    fetch(API_BASE + '/history.php?action=list')
+        .then(r => r.json())
+        .then(res => {
+            if (res.ok && res.data.length > 0) {
+                container.innerHTML = res.data.map(d => `
+                    <div class="history-item">
+                        <div class="history-icon completed">✓</div>
+                        <div class="history-info">
+                            <h3>${d.name}</h3>
+                            <p>${d.created_at} • ${d.size_human || '—'}</p>
+                        </div>
+                        <a href="${d.file_path}" download class="history-status status-completed" style="text-decoration:none">Download</a>
+                    </div>
+                `).join('');
+                return;
+            }
+            // Fallback
+            if (downloadHistory.length === 0) {
+                container.innerHTML = `<div class="empty-state"><div class="empty-icon">📥</div><p>No downloads yet. Start by searching for something!</p></div>`;
+            } else {
+                container.innerHTML = downloadHistory.map(d => `
+                    <div class="history-item">
+                        <div class="history-icon ${d.status}">${d.status === 'completed' ? '✓' : '✗'}</div>
+                        <div class="history-info">
+                            <h3>${d.name}</h3>
+                            <p>${d.date} • ${d.size}</p>
+                        </div>
+                        <span class="history-status status-${d.status}">${d.status === 'completed' ? 'Ready' : 'Failed'}</span>
+                    </div>
+                `).join('');
+            }
+        })
+        .catch(() => {
+            container.innerHTML = `<div class="empty-state"><div class="empty-icon">📥</div><p>No downloads yet. Start by searching for something!</p></div>`;
+        });
 }
 
 // ─── Init ───
-document.addEventListener('DOMContentLoaded', () => {
-    showSection('home');
-});
+document.addEventListener('DOMContentLoaded', () => showSection('home'));

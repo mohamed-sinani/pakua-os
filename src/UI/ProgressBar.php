@@ -78,6 +78,7 @@ final class ProgressBar
         }
 
         echo $output;
+        flush();
     }
 
     public static function formatBytes(int $bytes): string

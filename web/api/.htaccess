@@ -1,0 +1,12 @@
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^$ index.php [L]
+
+# Allow SSE streaming
+<IfModule mod_headers.c>
+    Header set X-Accel-Buffering "no"
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+</IfModule>
+
+# Prevent directory listing
+Options -Indexes
