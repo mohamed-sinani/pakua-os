@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PakuaOS — Free Operating System &amp; Software Downloader</title>
+    <meta name="description" content="Download operating systems and software for free. Find ISOs for Windows, Linux, macOS and thousands of apps — all verified and safe.">
+    <meta name="keywords" content="download OS, operating system download, Windows ISO, Linux ISO, macOS download, software download, free ISO download">
+    <meta name="robots" content="index, follow">
+    <meta property="og:title" content="PakuaOS — Free Operating System &amp; Software Downloader">
+    <meta property="og:description" content="Download operating systems and software for free. Verified ISOs and apps.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://pakuaos.com">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="canonical" href="https://pakuaos.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- ═══════════════════ HEADER ═══════════════════ -->
+    <header class="header" id="top">
+        <div class="container header-inner">
+            <a href="#" class="logo" onclick="showSection('home')">
+                <span class="logo-icon">⚡</span>
+                <span class="logo-text">Pakua<span class="logo-accent">OS</span></span>
+            </a>
+            <nav class="nav" id="mainNav">
+                <a href="#" class="nav-link active" data-section="home">Home</a>
+                <a href="#" class="nav-link" data-section="os">Operating Systems</a>
+                <a href="#" class="nav-link" data-section="software">Software</a>
+                <a href="#" class="nav-link" data-section="search">Search</a>
+                <a href="#" class="nav-link" data-section="history">Downloads</a>
+            </nav>
+            <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- ═══════════════════ MAIN CONTENT ═══════════════════ -->
+    <main>
+        <!-- ─── HOME ─── -->
+        <section class="section hero-section" id="section-home">
+            <div class="hero-glow"></div>
+            <div class="container hero-content">
+                <h1 class="hero-title">Download <span class="glow-text">Operating Systems</span> &amp; Software</h1>
+                <p class="hero-sub">Find and download verified ISOs and apps for Windows, Linux, and macOS — all in one place.</p>
+                <div class="search-box">
+                    <input type="text" id="heroSearch" placeholder="Search for any OS or software..." autocomplete="off">
+                    <button class="btn-glow" onclick="performSearch()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                        Search
+                    </button>
+                </div>
+                <div class="hero-tags">
+                    <button class="tag" onclick="quickSearch('Windows 11')">Windows 11</button>
+                    <button class="tag" onclick="quickSearch('Ubuntu')">Ubuntu</button>
+                    <button class="tag" onclick="quickSearch('VS Code')">VS Code</button>
+                    <button class="tag" onclick="quickSearch('Firefox')">Firefox</button>
+                    <button class="tag" onclick="quickSearch('Chrome')">Chrome</button>
+                    <button class="tag" onclick="quickSearch('macOS')">macOS</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ─── FEATURES ─── -->
+        <section class="section features-section">
+            <div class="container">
+                <h2 class="section-title">Why PakuaOS?</h2>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">🛡️</div>
+                        <h3>Verified &amp; Safe</h3>
+                        <p>Every download is checked against official checksums. No tampered files, no malware — just clean, verified software.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">⚡</div>
+                        <h3>Fast Downloads</h3>
+                        <p>Direct links to official sources with fallback mirrors. If one source fails, we automatically try the next.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🌍</div>
+                        <h3>All Platforms</h3>
+                        <p>Windows, Linux, macOS — we've got ISOs for all major operating systems and hundreds of popular applications.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔄</div>
+                        <h3>Resume Support</h3>
+                        <p>Interrupted download? Pick up right where you left off. Our resumable downloads save your bandwidth and time.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔍</div>
+                        <h3>Smart Search</h3>
+                        <p>Search across multiple sources at once — curated lists, GitHub releases, Chocolatey, Snap, and the web.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">💰</div>
+                        <h3>100% Free</h3>
+                        <p>No registration, no subscriptions. Every feature is free and always will be. We're community-driven.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ─── OS SECTION ─── -->
+        <section class="section" id="section-os" style="display:none">
+            <div class="container">
+                <h2 class="section-title">Operating Systems</h2>
+                <p class="section-sub">Download verified ISO images for all major operating systems.</p>
+
+                <div class="os-tabs">
+                    <button class="os-tab active" onclick="showOSTab('linux')">🐧 Linux</button>
+                    <button class="os-tab" onclick="showOSTab('windows')">🪟 Windows</button>
+                    <button class="os-tab" onclick="showOSTab('macos')">🍎 macOS</button>
+                </div>
+
+                <div class="os-grid" id="os-grid"></div>
+            </div>
+        </section>
+
+        <!-- ─── SOFTWARE SECTION ─── -->
+        <section class="section" id="section-software" style="display:none">
+            <div class="container">
+                <h2 class="section-title">Software</h2>
+                <p class="section-sub">Popular applications for every platform — download the latest versions.</p>
+                <div class="search-box" style="max-width:600px;margin:0 auto 2rem">
+                    <input type="text" id="softwareSearch" placeholder="Filter software..." oninput="filterSoftware(this.value)">
+                </div>
+                <div class="software-grid" id="software-grid"></div>
+            </div>
+        </section>
+
+        <!-- ─── SEARCH SECTION ─── -->
+        <section class="section" id="section-search" style="display:none">
+            <div class="container">
+                <h2 class="section-title">Search Everything</h2>
+                <p class="section-sub">Search across all sources at once — curated lists, GitHub, Chocolatey, Snap, and more.</p>
+                <div class="search-box">
+                    <input type="text" id="globalSearch" placeholder="Type anything to search..." autocomplete="off">
+                    <button class="btn-glow" onclick="performGlobalSearch()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                        Search
+                    </button>
+                </div>
+                <div id="search-results" class="search-results"></div>
+            </div>
+        </section>
+
+        <!-- ─── HISTORY SECTION ─── -->
+        <section class="section" id="section-history" style="display:none">
+            <div class="container">
+                <h2 class="section-title">Download History</h2>
+                <p class="section-sub">Track your recent downloads and resume interrupted ones.</p>
+                <div id="history-list" class="history-list">
+                    <div class="empty-state">
+                        <div class="empty-icon">📥</div>
+                        <p>No downloads yet. Start by searching for something!</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ─── DOWNLOAD PAGE ─── -->
+        <section class="section" id="section-download" style="display:none">
+            <div class="container">
+                <div class="download-detail" id="download-detail"></div>
+            </div>
+        </section>
+
+        <!-- ─── BROWSE OS CATEGORY ─── -->
+        <section class="section" id="section-browse" style="display:none">
+            <div class="container">
+                <div id="browse-content"></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ═══════════════════ FOOTER ═══════════════════ -->
+    <footer class="footer">
+        <div class="container footer-grid">
+            <div class="footer-col">
+                <div class="logo footer-logo">
+                    <span class="logo-icon">⚡</span>
+                    <span class="logo-text">Pakua<span class="logo-accent">OS</span></span>
+                </div>
+                <p class="footer-desc">Free and open-source tool for downloading operating systems and software. Verified, fast, and safe.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Download</h4>
+                <ul>
+                    <li><a href="#" onclick="showSection('os')">Operating Systems</a></li>
+                    <li><a href="#" onclick="showSection('software')">Software</a></li>
+                    <li><a href="#" onclick="showSection('search')">Search</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Resources</h4>
+                <ul>
+                    <li><a href="pages/about.html">About Us</a></li>
+                    <li><a href="pages/contact.html">Contact</a></li>
+                    <li><a href="pages/faq.html">FAQ</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="pages/privacy.html">Privacy Policy</a></li>
+                    <li><a href="pages/terms.html">Terms of Service</a></li>
+                    <li><a href="pages/dmca.html">DMCA Policy</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div class="container">
+                <p>&copy; 2026 PakuaOS. All rights reserved. Not affiliated with any OS vendor.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- AdSense placeholder -->
+    <div class="ad-placeholder" id="ad-banner-bottom">
+        <!-- Google AdSense ad unit will be placed here -->
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

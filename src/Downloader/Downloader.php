@@ -12,6 +12,10 @@ use PakuaOS\Database\Database;
 final class Downloader
 {
     private string $baseDir;
+    private ?string $expectedHash = null;
+    private string $hashAlgo = 'sha256';
+    private ?string $category = null;
+    private ?int $currentDownloadId = null;
 
     public function __construct(?string $baseDir = null)
     {
@@ -45,7 +49,8 @@ final class Downloader
         string $name,
         ?string $expectedHash = null,
         string $hashAlgo = 'sha256',
-        ?string $category = null
+        ?string $category = null,
+        array $fallbackUrls = []
     ): ?string {
         $dir = $this->resolveDir($category);
 
@@ -62,10 +67,19 @@ final class Downloader
         $filename = $this->sanitizeFilename($name);
         $filePath = $dir . '/' . $filename;
 
+        $db = Database::instance();
+
         $startByte = 0;
         if (file_exists($filePath . '.part')) {
             $startByte = filesize($filePath . '.part');
-            echo "  " . Theme::info("Resuming from " . ProgressBar::formatBytes($startByte)) . "\n\n";
+            $existing = $db->getDownloadsByStatus('downloading');
+            $existing = array_filter($existing, fn($d) => ($d['file_path'] ?? '') === $filePath . '.part');
+            if (!empty($existing)) {
+                $dlRec = reset($existing);
+                echo "  " . Theme::info("Resuming from " . ProgressBar::formatBytes($startByte) . " (previous session)") . "\n\n";
+            } else {
+                echo "  " . Theme::info("Resuming from " . ProgressBar::formatBytes($startByte)) . "\n\n";
+            }
         } elseif (file_exists($filePath)) {
             if (!Menu_confirm("File exists. Overwrite?")) {
                 echo "  " . Theme::info("Download cancelled.") . "\n";
@@ -73,7 +87,53 @@ final class Downloader
             }
         }
 
-        // Get file size via HEAD request — suppress any output
+        // Register download in DB as 'downloading'
+        $dlId = $db->addDownload([
+            'name'       => basename($filePath),
+            'url'        => $url,
+            'file_path'  => $filePath . '.part',
+            'file_size'  => 0,
+            'downloaded' => $startByte,
+            'status'     => 'downloading',
+            'hash_type'  => $hashAlgo,
+            'hash_value' => $expectedHash ?? '',
+            'source'     => parse_url($url, PHP_URL_HOST) ?? '',
+            'category'   => $category ?? 'other',
+        ]);
+
+        // Store for use in tryDownload
+        $this->expectedHash = $expectedHash;
+        $this->hashAlgo = $hashAlgo;
+        $this->category = $category;
+        $this->currentDownloadId = $dlId;
+
+        // Try primary URL first, then fallbacks
+        $allUrls = array_merge([$url], $fallbackUrls);
+        foreach ($allUrls as $attempt => $tryUrl) {
+            if ($attempt > 0) {
+                echo "\n  " . Theme::warning("Trying fallback source (attempt " . ($attempt + 1) . "/" . count($allUrls) . ")...") . "\n";
+                echo "  " . Theme::dim('URL: ' . $tryUrl) . "\n\n";
+            }
+
+            $result = $this->tryDownload($tryUrl, $filePath, $startByte);
+            if ($result !== null) {
+                return $result;
+            }
+
+            // Reset startByte for fallback attempts
+            $startByte = 0;
+        }
+
+        // All attempts failed
+        echo "\n\n";
+        echo "  " . Theme::error("All download sources failed!") . "\n";
+        echo "  " . Theme::dim("Tried " . count($allUrls) . " source(s)") . "\n";
+        return null;
+    }
+
+    private function tryDownload(string $url, string $filePath, int $startByte): ?string
+    {
+        // Get file size via HEAD request
         $headCh = curl_init($url);
         curl_setopt_array($headCh, [
             CURLOPT_NOBODY         => true,
@@ -133,16 +193,23 @@ final class Downloader
             echo "  " . Theme::error("Download failed!") . "\n";
             if ($error) echo "  " . Theme::error("Error: {$error}") . "\n";
             echo "  " . Theme::dim("HTTP Code: {$httpCode}") . "\n";
+            if ($this->currentDownloadId) {
+                Database::instance()->updateDownload($this->currentDownloadId, [
+                    'status' => 'resumable',
+                    'downloaded' => $startByte + (int)@filesize($filePath . '.part'),
+                ]);
+            }
             return null;
         }
 
+        $finalSize = filesize($filePath . '.part');
         rename($filePath . '.part', $filePath);
         $bar->finish();
         echo "\n";
 
-        if ($expectedHash) {
+        if ($this->expectedHash) {
             echo Theme::separator("Verification") . "\n";
-            $verified = HashVerifier::verify($filePath, $expectedHash, $hashAlgo);
+            $verified = HashVerifier::verify($filePath, $this->expectedHash, $this->hashAlgo);
             if ($verified) {
                 echo "  " . Theme::success("✔ Integrity verified.") . "\n";
                 echo "  " . Theme::success("✔ Publisher signature verified.") . "\n\n";
@@ -161,18 +228,28 @@ final class Downloader
         echo "  " . Theme::cyan($filePath) . "\n";
         echo "  " . Theme::dim("Size: " . ProgressBar::formatBytes($size)) . "\n\n";
 
-        Database::instance()->addDownload([
-            'name'      => $name,
-            'url'       => $url,
-            'file_path' => $filePath,
-            'file_size' => $size,
-            'downloaded'=> $size,
-            'status'    => 'completed',
-            'hash_type' => $hashAlgo,
-            'hash_value'=> $expectedHash ?? '',
-            'source'    => parse_url($url, PHP_URL_HOST) ?? '',
-            'category'  => $category ?? 'other',
-        ]);
+        if ($this->currentDownloadId) {
+            Database::instance()->updateDownload($this->currentDownloadId, [
+                'name'       => basename($filePath),
+                'file_path'  => $filePath,
+                'file_size'  => $size,
+                'downloaded' => $size,
+                'status'     => 'completed',
+            ]);
+        } else {
+            Database::instance()->addDownload([
+                'name'       => basename($filePath),
+                'url'        => $url,
+                'file_path'  => $filePath,
+                'file_size'  => $size,
+                'downloaded' => $size,
+                'status'     => 'completed',
+                'hash_type'  => $this->hashAlgo,
+                'hash_value' => $this->expectedHash ?? '',
+                'source'     => parse_url($url, PHP_URL_HOST) ?? '',
+                'category'   => $this->category ?? 'other',
+            ]);
+        }
 
         return $filePath;
     }

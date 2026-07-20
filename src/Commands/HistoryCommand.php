@@ -32,18 +32,23 @@ final class HistoryCommand extends Command
         $rows = [];
         foreach ($all as $row) {
             $status = match ($row['status'] ?? '') {
-                'completed' => Theme::success('✓ Done'),
-                'failed'    => Theme::error('✗ Failed'),
-                'paused'    => Theme::warning('● Paused'),
-                'queued'    => Theme::dim('○ Queued'),
-                default     => Theme::info($row['status'] ?? '?'),
+                'completed'  => Theme::success('✓ Ready'),
+                'failed'     => Theme::error('✗ Failed'),
+                'downloading'=> Theme::info('↓ Downloading'),
+                'paused'     => Theme::warning('● Paused'),
+                'resumable'  => Theme::warning('↻ Resumable'),
+                'queued'     => Theme::dim('○ Queued'),
+                default      => Theme::info($row['status'] ?? '?'),
             };
+
+            $size = $row['file_size'] ?? ($row['downloaded'] ?? 0);
+            $sizeStr = $size > 0 ? \PakuaOS\UI\ProgressBar::formatBytes($size) : '—';
 
             $rows[] = [
                 (string)($row['id'] ?? '?'),
-                Theme::dim(mb_substr($row['name'] ?? '', 0, 34)),
-                Theme::dim($row['created_at'] ?? ''),
+                Theme::bold(mb_substr($row['name'] ?? '', 0, 34)),
                 $status,
+                $sizeStr,
             ];
         }
 
@@ -53,7 +58,7 @@ final class HistoryCommand extends Command
         }
 
         $output->writeln("\n" . Theme::bold("  Download History"));
-        Table::render(['ID', 'Name', 'Date', 'Status'], $rows, [6, 35, 22, 12]);
+        Table::render(['#', 'Package', 'Status', 'Size'], $rows, [5, 34, 14, 12]);
         return Command::SUCCESS;
     }
 }

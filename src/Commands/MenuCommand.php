@@ -32,6 +32,8 @@ final class MenuCommand extends Command
 
         echo "  " . Theme::green('✔') . ' ' . Theme::dim('Connected to repositories.') . "\n\n";
 
+        $this->detectOrphanedDownloads();
+
         $engine = new SearchEngine();
         $dl = new Downloader();
 
@@ -87,9 +89,13 @@ final class MenuCommand extends Command
 
         // Step 2: Group by distro name
         $groups = [];
+        $groupLabels = [];
+        $groupDescs = [];
         foreach ($allResults as $r) {
-            $groupName = $this->extractDistroName($r['name']);
+            $groupName = !empty($r['distro_label']) ? $r['distro_label'] : $this->extractDistroName($r['name']);
             $groups[$groupName][] = $r;
+            if (!empty($r['distro_label'])) $groupLabels[$groupName] = $r['distro_label'];
+            if (!empty($r['distro_desc']))  $groupDescs[$groupName]  = $r['distro_desc'];
         }
 
         // Step 3: Pick distro
@@ -97,7 +103,9 @@ final class MenuCommand extends Command
         $distroOptions = [];
         foreach ($distroNames as $dn) {
             $count = count($groups[$dn]);
-            $distroOptions[] = ['label' => $dn, 'desc' => "{$count} version(s) available"];
+            $label = $groupLabels[$dn] ?? $dn;
+            $desc  = $groupDescs[$dn]  ?? "{$count} version(s) available";
+            $distroOptions[] = ['label' => $label, 'desc' => $desc];
         }
 
         $distroIdx = Menu::select("Select {$category} Distribution", $distroOptions);
@@ -230,27 +238,55 @@ final class MenuCommand extends Command
         $rows = [];
         foreach ($all as $row) {
             $status = match ($row['status'] ?? '') {
-                'completed' => Theme::success('completed'),
-                'failed'    => Theme::error('failed'),
-                'paused'    => Theme::warning('paused'),
-                default     => Theme::dim('queued'),
+                'completed'  => Theme::success('✓ Ready'),
+                'failed'     => Theme::error('✗ Failed'),
+                'downloading'=> Theme::info('↓ Downloading'),
+                'paused'     => Theme::warning('● Paused'),
+                'resumable'  => Theme::warning('↻ Resumable'),
+                default      => Theme::dim('○ Queued'),
             };
+            $size = $row['file_size'] ?? ($row['downloaded'] ?? 0);
+            $sizeStr = $size > 0 ? \PakuaOS\UI\ProgressBar::formatBytes($size) : '—';
             $rows[] = [
                 Theme::cyan((string)($row['id'] ?? '—')),
                 Theme::bold(mb_substr($row['name'] ?? '', 0, 30)),
-                $row['created_at'] ?? '',
                 $status,
+                $sizeStr,
             ];
         }
 
         Table::render(
-            ['ID', 'Name', 'Date', 'Status'],
+            ['#', 'Package', 'Status', 'Size'],
             $rows,
-            [5, 32, 20, 14]
+            [5, 34, 14, 12]
         );
 
-        echo "\n";
-        Menu::prompt('Press Enter to continue');
+        $resumable = array_values(array_filter($all, fn($d) => in_array($d['status'] ?? '', ['resumable', 'downloading'])));
+        if (!empty($resumable)) {
+            echo "\n";
+            $idx = Menu::select('Action', array_merge(
+                [['label' => 'Back', 'desc' => 'Return to main menu']],
+                array_map(fn($d) => [
+                    'label' => 'Resume: ' . mb_substr($d['name'] ?? '', 0, 28),
+                    'desc' => 'Continue downloading',
+                ], $resumable)
+            ), true);
+
+            if ($idx > 0) {
+                $dlRec = $resumable[$idx - 1];
+                $dl = new Downloader();
+                $dl->download(
+                    $dlRec['url'],
+                    $dlRec['name'],
+                    $dlRec['hash_value'] ?: null,
+                    $dlRec['hash_type'] ?: 'sha256',
+                    $dlRec['category'] ?: null
+                );
+            }
+        } else {
+            echo "\n";
+            Menu::prompt('Press Enter to continue');
+        }
     }
 
     // ─── Settings ──────────────────────────────────────────────────────
@@ -365,7 +401,61 @@ final class MenuCommand extends Command
         if (Menu::confirm("Start download?")) {
             $dl = new Downloader();
             $name = ($r['name'] ?? 'download') . ' ' . ($r['platform'] ?? '');
-            $dl->download($r['url'], $name, null, 'sha256', $downloadCategory);
+            $fallbackUrls = $r['fallback_urls'] ?? [];
+            $dl->download($r['url'], $name, null, 'sha256', $downloadCategory, $fallbackUrls);
+        }
+    }
+
+    private function detectOrphanedDownloads(): void
+    {
+        $db = \PakuaOS\Database\Database::instance();
+        $resumable = $db->getDownloadsByStatus('resumable');
+        $downloading = $db->getDownloadsByStatus('downloading');
+
+        $all = array_merge($resumable, $downloading);
+        $orphans = [];
+        foreach ($all as $dl) {
+            $partPath = ($dl['file_path'] ?? '') . '.part';
+            $filePath = $dl['file_path'] ?? '';
+            if (file_exists($partPath) || file_exists($filePath . '.part')) {
+                $orphans[] = $dl;
+            } elseif (file_exists($filePath)) {
+                // .part was renamed but status wasn't updated — mark completed
+                $db->updateDownload($dl['id'], ['status' => 'completed']);
+            } else {
+                // No file at all — mark failed
+                $db->updateDownload($dl['id'], ['status' => 'failed']);
+            }
+        }
+
+        if (empty($orphans)) return;
+
+        echo Theme::warning("⚡ Found " . count($orphans) . " interrupted download(s):") . "\n\n";
+
+        foreach ($orphans as $i => $dl) {
+            $partPath = $dl['file_path'] ?? '';
+            if (!file_exists($partPath)) $partPath .= '.part';
+            $partialSize = file_exists($partPath) ? filesize($partPath) : 0;
+            echo "  " . Theme::cyan((string)($i + 1)) . ". " . Theme::bold($dl['name'] ?? 'unknown');
+            echo " — " . Theme::dim(ProgressBar::formatBytes($partialSize) . " downloaded");
+            echo " — " . Theme::dim($dl['url'] ?? '') . "\n";
+        }
+
+        echo "\n";
+        if (Menu::confirm("Resume these downloads?")) {
+            $dlEngine = new Downloader();
+            foreach ($orphans as $dl) {
+                echo "\n";
+                $dlEngine->download(
+                    $dl['url'],
+                    $dl['name'],
+                    $dl['hash_value'] ?: null,
+                    $dl['hash_type'] ?: 'sha256',
+                    $dl['category'] ?: null
+                );
+            }
+        } else {
+            echo "  " . Theme::dim("Skipped. Downloads remain resumable.") . "\n\n";
         }
     }
 }

@@ -15,12 +15,18 @@ final class WindowsProvider implements Provider
         $query = strtolower($query);
         $versions = [
             [
-                'name'  => 'Windows 11 24H2 (26100)',
+                'name'  => 'Windows 11 25H2',
                 'architectures' => ['x64'],
-                'url'   => 'https://software-static.download.prss.microsoft.com/dbazure/888858/9d2abac5-3e76-4292-8e47-5fc5ab657a9d/26100.1.240331-1403.GE_RELEASE_SVC_PROD2_CLIENTCORE_SINGLELANGUAGE_OEMRET_x64FRE_en-us.iso',
-                'size'  => '6.5 GB',
+                'url'   => 'https://software-static.download.prss.microsoft.com/dbazure/888969d5-f34g-4e03-ac9d-1f9786c66749/26200.6584.250915-1905.25h2_ge_release_svc_refresh_CLIENT_CONSUMER_x64FRE_en-us.iso',
+                'size'  => '7.2 GB',
                 'source'=> 'Official Microsoft',
                 'verified' => true,
+                'distro_label' => 'Windows desktop',
+                'distro_desc'  => 'For laptop and desktops',
+                'fallback_urls' => [
+                    'https://archive.org/download/win1125h2_26200.4946/en-us_windows_11_consumer_editions_version_25h2_updated_2025_x64_dvd.iso',
+                    'https://archive.org/download/win1125h2_26200.4946/en-us_windows_11_consumer_editions_version_25h2_x64_dvd.iso',
+                ],
             ],
             [
                 'name'  => 'Windows 11 23H2',
@@ -29,6 +35,11 @@ final class WindowsProvider implements Provider
                 'size'  => '6.3 GB',
                 'source'=> 'Official Microsoft',
                 'verified' => true,
+                'distro_label' => 'Windows desktop',
+                'distro_desc'  => 'For laptop and desktops',
+                'fallback_urls' => [
+                    'https://archive.org/download/win-11-23h2/Win11_23H2_English_x64.iso',
+                ],
             ],
             [
                 'name'  => 'Windows 10 22H2',
@@ -37,6 +48,11 @@ final class WindowsProvider implements Provider
                 'size'  => '5.8 GB',
                 'source'=> 'Official Microsoft',
                 'verified' => true,
+                'distro_label' => 'Windows desktop',
+                'distro_desc'  => 'For laptop and desktops',
+                'fallback_urls' => [
+                    'https://archive.org/download/windows-10-22h2-x64-english/en-us_windows_10_22h2_updated_may_2023_x64_dvd_8ae93bf4.iso',
+                ],
             ],
             [
                 'name'  => 'Windows Server 2022',
@@ -45,6 +61,11 @@ final class WindowsProvider implements Provider
                 'size'  => '4.9 GB',
                 'source'=> 'Official Microsoft',
                 'verified' => true,
+                'distro_label' => 'Windows Server',
+                'distro_desc'  => 'For server use',
+                'fallback_urls' => [
+                    'https://archive.org/download/WindowsServer2022_RTM/en-us_windows_server_2022_x64_dvd_620d7eac.iso',
+                ],
             ],
         ];
 
@@ -53,16 +74,19 @@ final class WindowsProvider implements Provider
             if ($query !== '' && !str_contains(strtolower($v['name']), $query)) continue;
             foreach ($v['architectures'] as $arch) {
                 $results[] = [
-                    'name'      => $v['name'],
-                    'version'   => $v['name'],
-                    'platform'  => $arch,
-                    'type'      => 'ISO',
-                    'url'       => $v['url'],
-                    'source'    => $v['source'],
-                    'verified'  => $v['verified'],
-                    'hash_type' => 'SHA256',
-                    'category'  => 'windows',
-                    'provider'  => $this->getName(),
+                    'name'          => $v['name'],
+                    'version'       => $v['name'],
+                    'platform'      => $arch,
+                    'type'          => 'ISO',
+                    'url'           => $v['url'],
+                    'source'        => $v['source'],
+                    'verified'      => $v['verified'],
+                    'hash_type'     => 'SHA256',
+                    'category'      => 'windows',
+                    'provider'      => $this->getName(),
+                    'distro_label'  => $v['distro_label'] ?? '',
+                    'distro_desc'   => $v['distro_desc'] ?? '',
+                    'fallback_urls' => $v['fallback_urls'] ?? [],
                 ];
             }
         }
