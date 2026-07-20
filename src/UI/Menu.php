@@ -18,18 +18,19 @@ final class Menu
     public static function select(string $title, array $options, bool $allowBack = true): ?int
     {
         echo "\n";
-        echo Theme::bold("  {$title}") . "\n\n";
+        echo Theme::separator($title) . "\n";
+        echo "\n";
 
         foreach ($options as $i => $option) {
             $num = Theme::cyan(str_pad((string)($i + 1), 2));
             if (is_array($option)) {
                 $label = $option['label'] ?? '';
                 $desc = $option['desc'] ?? '';
-                echo "  {$num}. {$label}";
+                echo "  {$num}. " . Theme::bold($label);
                 if ($desc) echo Theme::dim(" — {$desc}");
                 echo "\n";
             } else {
-                echo "  {$num}. {$option}\n";
+                echo "  {$num}. " . Theme::bold($option) . "\n";
             }
         }
 
@@ -52,7 +53,6 @@ final class Menu
                 }
             }
             echo '  ' . Theme::error("Invalid choice. Enter 1-" . count($options)) . "\n";
-            echo '  ' . Theme::cyan('>') . ' ';
         }
     }
 
@@ -68,7 +68,7 @@ final class Menu
     public static function prompt(string $label, string $default = ''): string
     {
         $suffix = $default ? Theme::dim(" ({$default})") : '';
-        echo '  ' . Theme::cyan('>') . ' ' . Theme::bold($label) . $suffix . ': ';
+        echo "\n  " . Theme::cyan('>') . ' ' . Theme::bold($label) . $suffix . ': ';
         $input = self::readLine();
         if ($input === null || $input === '') return $default;
         return $input;

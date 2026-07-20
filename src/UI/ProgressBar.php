@@ -10,12 +10,14 @@ final class ProgressBar
     private int $current = 0;
     private int $width;
     private float $startTime;
+    private string $label;
 
-    public function __construct(int $total, int $width = 35)
+    public function __construct(int $total, int $width = 30, string $label = '')
     {
         $this->total = max($total, 1);
         $this->width = $width;
         $this->startTime = microtime(true);
+        $this->label = $label;
     }
 
     public function advance(int $bytes): void
@@ -43,7 +45,7 @@ final class ProgressBar
         $filled = (int)round(($this->current / $this->total) * $this->width);
         $empty = $this->width - $filled;
 
-        $bar = Theme::green(str_repeat('█', $filled)) . Theme::dim(str_repeat('░', $empty));
+        $bar = Theme::cyan(str_repeat('█', $filled)) . Theme::dim(str_repeat('░', $empty));
 
         $elapsed = microtime(true) - $this->startTime;
         $speed = $elapsed > 0 ? $this->current / $elapsed : 0;
@@ -58,15 +60,22 @@ final class ProgressBar
 
         $currentStr = self::formatBytes($this->current);
         $totalStr = self::formatBytes($this->total);
-        $pctStr = number_format($pct, 1) . '%';
+        $pctStr = number_format($pct, 0) . '%';
 
         $output = "\r\033[K";
+        if ($this->label) {
+            $output .= '  ' . Theme::bold($this->label) . "\n";
+        }
         $output .= '  ';
-        $output .= $bar . ' ';
+        $output .= '[' . $bar . '] ';
         $output .= ($pct >= 100 ? Theme::bold(Theme::green($pctStr)) : Theme::cyan($pctStr)) . ' ';
-        $output .= Theme::dim($currentStr . '/' . $totalStr) . ' ';
+        $output .= Theme::dim($currentStr . ' / ' . $totalStr) . ' ';
         $output .= Theme::dim($speedStr) . ' ';
         $output .= Theme::dim('ETA: ' . $eta);
+
+        if ($pct >= 100) {
+            $output .= '  ' . Theme::green('✔');
+        }
 
         echo $output;
     }

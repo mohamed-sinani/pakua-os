@@ -45,25 +45,113 @@ final class Theme
 
     public static function banner(): void
     {
-        $lines = [
-            '',
-            '  ' . self::cyan('╔══════════════════════════════════════════╗'),
-            '  ' . self::cyan('║') . '                                          ' . self::cyan('║'),
-            '  ' . self::cyan('║') . '   ' . self::bold(self::white('PakuaOS')) . '                                  ' . self::cyan('║'),
-            '  ' . self::cyan('║') . '   ' . self::dim('Software & Operating System Hub') . '      ' . self::cyan('║'),
-            '  ' . self::cyan('║') . '   ' . self::green('Find. Verify. Download.') . '               ' . self::cyan('║'),
-            '  ' . self::cyan('║') . '                                          ' . self::cyan('║'),
-            '  ' . self::cyan('╚══════════════════════════════════════════╝'),
-            '',
+        $cyan = fn(string $t) => self::c($t, 'cyan');
+        $white = fn(string $t) => self::c($t, 'white');
+        $dim = fn(string $t) => self::c($t, 'gray');
+        $green = fn(string $t) => self::c($t, 'green');
+        $blue = fn(string $t) => self::c($t, 'blue');
+        $bold = fn(string $t) => self::bold($t);
+
+        $w = 78;
+        $line = fn() => $cyan(str_repeat('═', $w));
+
+        echo "\n";
+        echo "  " . $cyan(str_repeat('═', $w)) . "\n";
+        echo "  " . $cyan('═') . str_repeat(' ', $w - 2) . $cyan('═') . "\n";
+        echo "  " . $cyan('═') . str_repeat(' ', 26) . $bold($white('PakuaOS v1.0')) . str_repeat(' ', 26) . $cyan('═') . "\n";
+        echo "  " . $cyan('═') . str_repeat(' ', 16) . $dim('Software & Operating System Hub') . str_repeat(' ', 16) . $cyan('═') . "\n";
+        echo "  " . $cyan('═') . str_repeat(' ', 20) . $green('Find') . ' ' . $dim('•') . ' ' . $green('Verify') . ' ' . $dim('•') . ' ' . $green('Download') . ' ' . $dim('Safely') . str_repeat(' ', 18) . $cyan('═') . "\n";
+        echo "  " . $cyan('═') . str_repeat(' ', $w - 2) . $cyan('═') . "\n";
+        echo "  " . $cyan(str_repeat('═', $w)) . "\n";
+        echo "\n";
+
+        // PakuaOS ASCII art
+        $art = [
+            'cyan' => [
+                '██████╗  █████╗ ██╗  ██╗██╗   ██╗ █████╗  ██████╗ ███████╗',
+                '██╔══██╗██╔══██╗██║ ██╔╝██║   ██║██╔══██╗██╔═══██╗██╔════╝',
+                '██████╔╝███████║█████╔╝ ██║   ██║███████║██║   ██║███████╗',
+                '██╔═══╝ ██╔══██║██╔═██╗ ██║   ██║██╔══██║██║   ██║╚════██║',
+                '██║     ██║  ██║██║  ██╗╚██████╔╝██║  ██║╚██████╔╝███████║',
+                '╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝',
+            ],
         ];
-        foreach ($lines as $line) echo $line . "\n";
+
+        foreach ($art['cyan'] as $line) {
+            echo '  ' . $cyan($line) . "\n";
+        }
+        echo "\n";
+        echo '  ' . str_repeat(' ', 20) . $dim('Software & Operating System Hub') . "\n";
+        echo '  ' . str_repeat(' ', 26) . $green('Find') . ' ' . $dim('•') . ' ' . $green('Verify') . ' ' . $dim('•') . ' ' . $green('Download') . "\n";
+        echo "\n";
+
+        // Developer info box
+        echo "  " . $cyan(str_repeat('─', $w)) . "\n";
+        echo "\n";
+        echo '  ' . $bold($white('Developer')) . ' : ' . $cyan('Mohamed Sinani') . $dim(' (Dev_Meddy)') . "\n";
+        echo '  ' . $bold($white('Website')) . '   : ' . $blue('https://dev.mohamedsinani.com') . "\n";
+        echo '  ' . $bold($white('GitHub')) . '    : ' . $blue('https://github.com/mohamed-sinani') . "\n";
+        echo '  ' . $bold($white('Instagram')) . ' : ' . $blue('https://instagram.com/dev_meddy') . "\n";
+        echo '  ' . $bold($white('Email')) . '     : ' . $blue('dev@mohamedsinani.com') . "\n";
+        echo "\n";
+        echo "  " . $cyan(str_repeat('─', $w)) . "\n";
+        echo "\n";
+
+        // Welcome box
+        echo "  " . $cyan('╭' . str_repeat('─', $w - 2) . '╮') . "\n";
+        echo "  " . $cyan('│') . str_repeat(' ', $w - 2) . $cyan('│') . "\n";
+        echo "  " . $cyan('│') . str_repeat(' ', 28) . $bold($white('PakuaOS v1.0')) . str_repeat(' ', 28) . $cyan('│') . "\n";
+        echo "  " . $cyan('│') . str_repeat(' ', 16) . $dim('Software & Operating System Hub') . str_repeat(' ', 16) . $cyan('│') . "\n";
+        echo "  " . $cyan('│') . str_repeat(' ', $w - 2) . $cyan('│') . "\n";
+        echo "  " . $cyan('│') . str_repeat(' ', 18) . $green('Find') . ' ' . $dim('•') . ' ' . $green('Verify') . ' ' . $dim('•') . ' ' . $green('Download') . ' ' . $dim('Safely') . str_repeat(' ', 18) . $cyan('│') . "\n";
+        echo "  " . $cyan('│') . str_repeat(' ', $w - 2) . $cyan('│') . "\n";
+        echo "  " . $cyan('├' . str_repeat('─', $w - 2) . '┤') . "\n";
+        echo "  " . $cyan('│') . ' ' . $bold($white('Developer')) . ' : ' . $cyan('Mohamed Sinani') . $dim(' (Dev_Meddy)') . str_repeat(' ', $w - 49 - 4) . $cyan('│') . "\n";
+        echo "  " . $cyan('│') . ' ' . $bold($white('GitHub')) . '    : ' . $blue('github.com/mohamed-sinani') . str_repeat(' ', $w - 38 - 4) . $cyan('│') . "\n";
+        echo "  " . $cyan('│') . ' ' . $bold($white('Website')) . '   : ' . $blue('dev.mohamedsinani.com') . str_repeat(' ', $w - 36 - 4) . $cyan('│') . "\n";
+        echo "  " . $cyan('│') . ' ' . $bold($white('Instagram')) . ' : ' . $blue('instagram.com/dev_meddy') . str_repeat(' ', $w - 34 - 4) . $cyan('│') . "\n";
+        echo "  " . $cyan('│') . ' ' . $bold($white('Email')) . '     : ' . $blue('dev@mohamedsinani.com') . str_repeat(' ', $w - 33 - 4) . $cyan('│') . "\n";
+        echo "  " . $cyan('╰' . str_repeat('─', $w - 2) . '╯') . "\n";
+        echo "\n";
     }
 
     public static function separator(string $title = ''): string
     {
         if ($title !== '') {
-            return self::dim("  ── {$title} " . str_repeat('─', max(0, 38 - mb_strlen($title))));
+            return self::dim("  ── {$title} " . str_repeat('─', max(0, 60 - mb_strlen($title))));
         }
-        return self::dim('  ' . str_repeat('─', 42));
+        return self::dim('  ' . str_repeat('─', 78));
+    }
+
+    public static function header(string $title): string
+    {
+        $cyan = fn(string $t) => self::c($t, 'cyan');
+        $w = 78;
+        return "  " . $cyan(str_repeat('=', $w)) . "\n  " . self::bold("  {$title}") . "\n  " . $cyan(str_repeat('=', $w));
+    }
+
+    public static function successBox(string $msg): string
+    {
+        return "\n  " . self::green('✔') . ' ' . $msg;
+    }
+
+    public static function errorBox(string $msg): string
+    {
+        return "\n  " . self::red('✖') . ' ' . $msg;
+    }
+
+    public static function warningBox(string $msg): string
+    {
+        return "\n  " . self::yellow('⚠') . ' ' . $msg;
+    }
+
+    public static function infoBox(string $msg): string
+    {
+        return "\n  " . self::cyan('ℹ') . ' ' . $msg;
+    }
+
+    public static function savedPath(string $path): string
+    {
+        return "\n  " . self::bold(self::green('Saved to:')) . "\n\n  " . self::cyan($path) . "\n";
     }
 }

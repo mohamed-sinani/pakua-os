@@ -11,6 +11,8 @@ use Symfony\Component\Console\Input\InputArgument;
 use PakuaOS\UI\Theme;
 use PakuaOS\UI\Table;
 use PakuaOS\UI\Menu;
+use PakuaOS\UI\Spinner;
+use PakuaOS\UI\ProgressBar;
 use PakuaOS\Search\SearchEngine;
 
 final class SearchCommand extends Command
@@ -28,17 +30,35 @@ final class SearchCommand extends Command
     {
         $query = $input->getArgument('query') ?? '';
 
+        echo "\n";
+        echo Theme::header('SEARCH') . "\n\n";
+
+        $spinner = new Spinner('Searching packages...');
+        $spinner->start();
+
+        $providersQueried = [];
         $engine = new SearchEngine();
-        $results = $engine->search($query);
+        $results = $engine->search($query, function (string $provider) use (&$providersQueried, $spinner) {
+            $providersQueried[] = $provider;
+            $spinner->updateMessage('Searching: ' . $provider);
+        });
+
+        $spinner->stop('Found ' . count($results) . ' matching packages.');
 
         if (empty($results)) {
-            $output->writeln(Theme::error("\n  No results found for: {$query}"));
+            echo "\n";
+            echo "  " . Theme::errorBox("Package not found.") . "\n";
+            echo "\n";
+            echo "  " . Theme::dim("Suggestions:") . "\n";
+            echo "  " . Theme::dim("pakua search vscode") . "\n";
+            echo "  " . Theme::dim("pakua search code") . "\n";
+            echo "  " . Theme::dim("pakua search visual studio code") . "\n";
+            echo "\n";
             return Command::SUCCESS;
         }
 
-        $output->writeln('');
-        $output->writeln(Theme::bold("  Found " . count($results) . " results for: " . Theme::cyan($query ?: '(all)')));
-        $output->writeln('');
+        echo "\n";
+        echo Theme::separator("Search Results") . "\n\n";
 
         $rows = [];
         foreach ($results as $i => $r) {
@@ -47,35 +67,40 @@ final class SearchCommand extends Command
                 Theme::bold($r['name']),
                 $r['platform'],
                 $r['type'],
-                $r['verified'] ? Theme::success('✓ Verified') : Theme::dim('—'),
+                isset($r['asset_size']) ? ProgressBar::formatBytes($r['asset_size']) : Theme::dim('—'),
+                $r['verified'] ? Theme::success('✓') : Theme::dim('—'),
             ];
         }
 
         Table::render(
-            ['#', 'Name', 'Platform', 'Type', 'Security'],
+            ['#', 'Name', 'Platform', 'Type', 'Size', 'Sec'],
             $rows,
-            [4, 30, 18, 14, 14]
+            [4, 30, 18, 14, 10, 6]
         );
 
-        $choice = Menu::prompt("\n  Enter number to view details (0 to go back)");
+        $choice = Menu::prompt("Enter number to view details (0 to go back)");
         $idx = (int)$choice - 1;
 
         if ($idx >= 0 && $idx < count($results)) {
             $r = $results[$idx];
             echo "\n";
-            echo Theme::separator("{$r['name']} Details") . "\n";
-            echo "  \033[36mName:\033[0m       {$r['name']}\n";
-            echo "  \033[36mPlatform:\033[0m   {$r['platform']}\n";
-            echo "  \033[36mType:\033[0m       {$r['type']}\n";
-            echo "  \033[36mSource:\033[0m     {$r['source']}\n";
-            echo "  \033[36mURL:\033[0m        {$r['url']}\n";
+            echo Theme::separator($r['name'] . ' Details') . "\n";
+            echo "  " . Theme::bold(Theme::cyan('Name')) . ':       ' . Theme::bold($r['name']) . "\n";
+            echo "  " . Theme::bold(Theme::cyan('Version')) . ':    ' . ($r['version'] ?? 'latest') . "\n";
+            echo "  " . Theme::bold(Theme::cyan('Platform')) . ':   ' . $r['platform'] . "\n";
+            echo "  " . Theme::bold(Theme::cyan('Type')) . ':       ' . $r['type'] . "\n";
+            echo "  " . Theme::bold(Theme::cyan('Source')) . ':     ' . ($r['source'] ?? '') . "\n";
             if (isset($r['publisher'])) {
-                echo "  \033[36mPublisher:\033[0m  {$r['publisher']}\n";
+                echo "  " . Theme::bold(Theme::cyan('Publisher')) . ':  ' . $r['publisher'] . "\n";
             }
-            echo "  \033[36mVerified:\033[0m  " . ($r['verified'] ? Theme::success('✓ Yes') : Theme::warning('No')) . "\n";
+            if (isset($r['asset_size'])) {
+                echo "  " . Theme::bold(Theme::cyan('Size')) . ':       ' . \PakuaOS\UI\ProgressBar::formatBytes($r['asset_size']) . "\n";
+            }
+            echo "  " . Theme::bold(Theme::cyan('URL')) . ':        ' . $r['url'] . "\n";
+            echo "  " . Theme::bold(Theme::cyan('Verified')) . ':  ' . ($r['verified'] ? Theme::success('✓ Verified') : Theme::warning('Unverified — check before installing')) . "\n";
             echo "\n";
 
-            if (Menu::confirm("  Start download?")) {
+            if (Menu::confirm("Start download?")) {
                 $cat = $r['category'] ?? null;
                 $dlCategory = in_array($cat, ['linux', 'windows', 'macos']) ? 'os' : 'programs';
                 $dl = new \PakuaOS\Downloader\Downloader();

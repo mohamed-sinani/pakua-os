@@ -29,6 +29,7 @@ final class Table
         }
 
         $top    = '  ┌' . implode('┬', array_map(fn($w) => str_repeat('─', $w), $widths)) . '┐';
+        $sep    = '  ├' . implode('┼', array_map(fn($w) => str_repeat('─', $w), $widths)) . '┤';
         $bottom = '  └' . implode('┴', array_map(fn($w) => str_repeat('─', $w), $widths)) . '┘';
 
         echo $top . "\n";
@@ -38,7 +39,7 @@ final class Table
             $headerLine .= ' ' . Theme::bold(self::pad($h, $widths[$i])) . '│';
         }
         echo $headerLine . "\n";
-        echo $bottom . "\n";
+        echo $sep . "\n";
 
         foreach ($rows as $row) {
             $line = '  │';

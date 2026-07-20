@@ -35,11 +35,14 @@ final class SearchEngine
         $this->providers[] = new WebSearchProvider();
     }
 
-    public function search(string $query): array
+    public function search(string $query, ?callable $onProgress = null): array
     {
         $all = [];
         foreach ($this->providers as $provider) {
             if (!$provider->isAvailable()) continue;
+            if ($onProgress) {
+                $onProgress($provider->getName());
+            }
             $results = $provider->search($query);
             $all = array_merge($all, $results);
         }
@@ -48,40 +51,46 @@ final class SearchEngine
         return $this->deduplicate($all);
     }
 
-    public function searchCategory(string $category, string $query = ''): array
+    public function searchCategory(string $category, string $query = '', ?callable $onProgress = null): array
     {
         $all = [];
         foreach ($this->providers as $provider) {
             if (!$provider->isAvailable()) continue;
             if ($provider->getCategory() !== $category) continue;
+            if ($onProgress) {
+                $onProgress($provider->getName());
+            }
             $results = $provider->search($query);
             $all = array_merge($all, $results);
         }
         return $this->deduplicate($all);
     }
 
-    public function searchSoftware(string $query): array
+    public function searchSoftware(string $query, ?callable $onProgress = null): array
     {
-        // Search curated + live API providers
         $all = [];
         foreach ($this->providers as $provider) {
             if (!$provider->isAvailable()) continue;
             if ($provider->getCategory() !== 'software') continue;
+            if ($onProgress) {
+                $onProgress($provider->getName());
+            }
             $results = $provider->search($query);
             $all = array_merge($all, $results);
         }
         return $this->deduplicate($all);
     }
 
-    public function searchOnline(string $query): array
+    public function searchOnline(string $query, ?callable $onProgress = null): array
     {
-        // Only live API providers (GitHub, Chocolatey, Snap)
         $all = [];
         foreach ($this->providers as $provider) {
             if (!$provider->isAvailable()) continue;
-            // Skip offline/curated providers
             $class = (new \ReflectionClass($provider))->getShortName();
             if (in_array($class, ['LinuxProvider', 'WindowsProvider', 'MacOSProvider', 'SoftwareProvider'])) continue;
+            if ($onProgress) {
+                $onProgress($provider->getName());
+            }
             $results = $provider->search($query);
             $all = array_merge($all, $results);
         }

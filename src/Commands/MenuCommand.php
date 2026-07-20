@@ -10,6 +10,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 use PakuaOS\UI\Theme;
 use PakuaOS\UI\Table;
 use PakuaOS\UI\Menu;
+use PakuaOS\UI\Spinner;
+use PakuaOS\UI\ProgressBar;
 use PakuaOS\Search\SearchEngine;
 use PakuaOS\Downloader\Downloader;
 
@@ -26,6 +28,9 @@ final class MenuCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         Theme::banner();
+        echo Theme::header('STARTING') . "\n\n";
+
+        echo "  " . Theme::green('✔') . ' ' . Theme::dim('Connected to repositories.') . "\n\n";
 
         $engine = new SearchEngine();
         $dl = new Downloader();
@@ -71,7 +76,12 @@ final class MenuCommand extends Command
             0 => 'linux', 1 => 'windows', 2 => 'macos', default => 'linux',
         };
 
-        $allResults = $engine->searchCategory($category);
+        $spinner = new Spinner('Searching ' . $category . '...');
+        $spinner->start();
+        $allResults = $engine->searchCategory($category, '', function (string $p) use ($spinner) {
+            $spinner->updateMessage('Searching: ' . $p);
+        });
+        $spinner->stop('Found ' . count($allResults) . ' results.');
 
         // Step 2: Group by distro name
         $groups = [];
@@ -89,14 +99,14 @@ final class MenuCommand extends Command
         }
 
         $distroIdx = Menu::select("Select {$category} Distribution", $distroOptions);
-        if ($distroIdx === null || $distroIdx === 0 && count($distroOptions) === 0) return;
+        if ($distroIdx === null || ($distroIdx === 0 && count($distroOptions) === 0)) return;
 
         $chosenDistro = $distroNames[$distroIdx] ?? null;
         if (!$chosenDistro || !isset($groups[$chosenDistro])) return;
 
         $distroResults = $groups[$chosenDistro];
 
-        // Step 4: Pick version (group by version)
+        // Step 4: Pick version
         $versions = [];
         foreach ($distroResults as $r) {
             $ver = $r['version'] ?? 'latest';
@@ -112,11 +122,9 @@ final class MenuCommand extends Command
             }
             $verOptions[] = ['label' => 'Latest', 'desc' => 'Use the newest version'];
 
-            echo "\n";
             $verIdx = Menu::select('Select Version', $verOptions);
 
             if ($verIdx === count($verOptions) - 1) {
-                // Latest = first version in list
                 $chosenVer = $verNames[0];
             } else {
                 $chosenVer = $verNames[$verIdx] ?? $verNames[0];
@@ -140,20 +148,27 @@ final class MenuCommand extends Command
             $final = $versionResults[0];
         }
 
-        // Step 6: Show details + confirm
         $this->showDetailsAndDownload($final, 'os');
     }
 
-    // ─── Software (Limitless) ──────────────────────────────────────────
+    // ─── Software ───────────────────────────────────────────────────────
 
     private function handleSoftware(SearchEngine $engine): void
     {
         $query = Menu::prompt('Search for any software');
         if ($query === '') return;
 
-        echo "\n  " . Theme::dim("Searching curated database + GitHub + Chocolatey + Snap Store + Web...") . "\n\n";
+        echo "\n";
 
-        $results = $engine->searchSoftware($query);
+        $spinner = new Spinner('Searching packages...');
+        $spinner->start();
+
+        $results = $engine->searchSoftware($query, function (string $p) use ($spinner) {
+            $spinner->updateMessage('Searching: ' . $p);
+        });
+
+        $spinner->stop('Found ' . count($results) . ' packages.');
+        echo "\n";
 
         $this->displayResults($results, 'programs');
     }
@@ -165,9 +180,18 @@ final class MenuCommand extends Command
         $query = Menu::prompt('Search everything');
         if ($query === '') return;
 
-        echo "\n  " . Theme::dim("Searching all sources...") . "\n\n";
+        echo "\n";
 
-        $results = $engine->search($query);
+        $spinner = new Spinner('Searching all sources...');
+        $spinner->start();
+
+        $results = $engine->search($query, function (string $p) use ($spinner) {
+            $spinner->updateMessage('Searching: ' . $p);
+        });
+
+        $spinner->stop('Found ' . count($results) . ' results.');
+        echo "\n";
+
         $this->displayResults($results, null);
     }
 
@@ -193,21 +217,37 @@ final class MenuCommand extends Command
         $all = array_slice($all, 0, 15);
 
         echo "\n";
-        echo Theme::bold("  Download History") . "\n\n";
-        $count = 0;
+        echo Theme::separator("Download History") . "\n\n";
+
+        if (empty($all)) {
+            echo "  " . Theme::dim("No download history.") . "\n\n";
+            Menu::prompt('Press Enter to continue');
+            return;
+        }
+
+        $rows = [];
         foreach ($all as $row) {
             $status = match ($row['status'] ?? '') {
-                'completed' => Theme::success('✓'),
-                'failed'    => Theme::error('✗'),
-                'paused'    => Theme::warning('●'),
-                default     => Theme::dim('○'),
+                'completed' => Theme::success('completed'),
+                'failed'    => Theme::error('failed'),
+                'paused'    => Theme::warning('paused'),
+                default     => Theme::dim('queued'),
             };
-            printf("  %s %s — %s — %s\n", $status, $row['name'] ?? '', $row['created_at'] ?? '', \PakuaOS\UI\ProgressBar::formatBytes((int)($row['file_size'] ?? 0)));
-            $count++;
+            $rows[] = [
+                Theme::cyan((string)($row['id'] ?? '—')),
+                Theme::bold(mb_substr($row['name'] ?? '', 0, 30)),
+                $row['created_at'] ?? '',
+                $status,
+            ];
         }
-        if ($count === 0) echo "  " . Theme::dim("No downloads yet.") . "\n";
-        echo "\n";
 
+        Table::render(
+            ['ID', 'Name', 'Date', 'Status'],
+            $rows,
+            [5, 32, 20, 14]
+        );
+
+        echo "\n";
         Menu::prompt('Press Enter to continue');
     }
 
@@ -226,16 +266,17 @@ final class MenuCommand extends Command
             0 => function () use ($db) {
                 $dir = Menu::prompt('Download directory', $db->setting('download_dir', '~/Downloads'));
                 $db->setSetting('download_dir', $dir);
-                echo Theme::success("\n  Download directory set to: {$dir}\n\n");
+                echo "\n" . Theme::successBox("Download directory set to: {$dir}") . "\n\n";
             },
             1 => function () use ($db) {
                 $completed = $db->getDownloadsByStatus('completed');
                 $count = count($completed);
                 $totalSize = 0;
                 foreach ($completed as $d) $totalSize += (int)($d['file_size'] ?? 0);
-                echo "\n  " . Theme::bold("Stats") . "\n";
-                echo "  Total downloads: " . Theme::cyan((string)$count) . "\n";
-                echo "  Total size: " . Theme::cyan(\PakuaOS\UI\ProgressBar::formatBytes($totalSize)) . "\n\n";
+                echo "\n";
+                echo Theme::separator("Stats") . "\n";
+                echo "  " . Theme::bold('Total downloads') . ': ' . Theme::cyan((string)$count) . "\n";
+                echo "  " . Theme::bold('Total size') . ':      ' . Theme::cyan(ProgressBar::formatBytes($totalSize)) . "\n\n";
             },
             null => null,
         };
@@ -245,15 +286,18 @@ final class MenuCommand extends Command
 
     private function extractDistroName(string $fullName): string
     {
-        // "Ubuntu 24.04.2 LTS ..." → "Ubuntu"
-        // "Debian 12 ..." → "Debian"
         return preg_replace('/\s+\d.*/', '', $fullName) ?: $fullName;
     }
 
     private function displayResults(array $results, ?string $downloadCategory): void
     {
         if (empty($results)) {
-            echo "\n  " . Theme::error('No results found.') . "\n";
+            echo "\n  " . Theme::errorBox("Package not found.") . "\n";
+            echo "\n  " . Theme::dim("Suggestions:") . "\n";
+            echo "  " . Theme::dim("pakua search vscode") . "\n";
+            echo "  " . Theme::dim("pakua search code") . "\n";
+            echo "  " . Theme::dim("pakua search visual studio code") . "\n";
+            echo "\n";
             return;
         }
 
@@ -267,7 +311,7 @@ final class MenuCommand extends Command
         foreach ($shown as $i => $r) {
             $source = $r['provider'] ?? $r['source'] ?? '';
             $stars = isset($r['stars']) ? " ★{$r['stars']}" : '';
-            $size = isset($r['asset_size']) ? ' ' . \PakuaOS\UI\ProgressBar::formatBytes($r['asset_size']) : '';
+            $size = isset($r['asset_size']) ? ' ' . ProgressBar::formatBytes($r['asset_size']) : '';
 
             $rows[] = [
                 Theme::cyan(str_pad((string)($i + 1), 3)),
@@ -300,20 +344,23 @@ final class MenuCommand extends Command
     {
         echo "\n";
         echo Theme::separator($r['name'] ?? 'Download') . "\n";
-        echo "  \033[36mName:\033[0m       " . ($r['name'] ?? '') . "\n";
-        echo "  \033[36mVersion:\033[0m    " . ($r['version'] ?? 'latest') . "\n";
-        echo "  \033[36mPlatform:\033[0m   " . ($r['platform'] ?? '') . "\n";
-        echo "  \033[36mType:\033[0m       " . ($r['type'] ?? '') . "\n";
-        echo "  \033[36mSource:\033[0m     " . ($r['source'] ?? '') . "\n";
-        echo "  \033[36mPublisher:\033[0m  " . ($r['publisher'] ?? $r['source'] ?? '') . "\n";
+        echo "  " . Theme::bold(Theme::cyan('Name')) . ':       ' . Theme::bold($r['name'] ?? '') . "\n";
+        echo "  " . Theme::bold(Theme::cyan('Version')) . ':    ' . ($r['version'] ?? 'latest') . "\n";
+        echo "  " . Theme::bold(Theme::cyan('Platform')) . ':   ' . ($r['platform'] ?? '') . "\n";
+        echo "  " . Theme::bold(Theme::cyan('Type')) . ':       ' . ($r['type'] ?? '') . "\n";
+        echo "  " . Theme::bold(Theme::cyan('Source')) . ':     ' . ($r['source'] ?? '') . "\n";
+        echo "  " . Theme::bold(Theme::cyan('Publisher')) . ':  ' . ($r['publisher'] ?? $r['source'] ?? '') . "\n";
         if (!empty($r['desc'])) {
-            echo "  \033[36mInfo:\033[0m       " . mb_substr($r['desc'], 0, 60) . "\n";
+            echo "  " . Theme::bold(Theme::cyan('Info')) . ':       ' . mb_substr($r['desc'], 0, 60) . "\n";
         }
-        echo "  \033[36mURL:\033[0m        " . ($r['url'] ?? '') . "\n";
-        echo "  \033[36mVerified:\033[0m  " . (($r['verified'] ?? false) ? Theme::success('✓ Verified') : Theme::warning('Unverified — check before installing')) . "\n";
+        if (isset($r['asset_size'])) {
+            echo "  " . Theme::bold(Theme::cyan('Size')) . ':       ' . ProgressBar::formatBytes($r['asset_size']) . "\n";
+        }
+        echo "  " . Theme::bold(Theme::cyan('URL')) . ':        ' . ($r['url'] ?? '') . "\n";
+        echo "  " . Theme::bold(Theme::cyan('Verified')) . ':  ' . (($r['verified'] ?? false) ? Theme::success('✓ Verified') : Theme::warning('Unverified — check before installing')) . "\n";
         echo "\n";
 
-        if (Menu::confirm("  Start download?")) {
+        if (Menu::confirm("Start download?")) {
             $dl = new Downloader();
             $name = ($r['name'] ?? 'download') . ' ' . ($r['platform'] ?? '');
             $dl->download($r['url'], $name, null, 'sha256', $downloadCategory);

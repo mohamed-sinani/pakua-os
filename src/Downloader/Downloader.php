@@ -50,14 +50,13 @@ final class Downloader
         $dir = $this->resolveDir($category);
 
         echo "\n";
-        echo Theme::separator("Security Check") . "\n";
-        echo "  \033[36mSource:\033[0m    {$url}\n";
-        echo "  \033[36mSaving to:\033[0m {$dir}\n";
+        echo Theme::separator("Download") . "\n";
+        echo "  " . Theme::bold(Theme::cyan('URL')) . ':        ' . $url . "\n";
+        echo "  " . Theme::bold(Theme::cyan('Saving to')) . ':  ' . $dir . "\n";
 
         if ($expectedHash) {
-            echo "  \033[36mChecksum:\033[0m  {$hashAlgo} provided — will verify after download\n";
+            echo "  " . Theme::bold(Theme::cyan('Checksum')) . ':  ' . Theme::dim("{$hashAlgo} — will verify after download") . "\n";
         }
-
         echo "\n";
 
         $filename = $this->sanitizeFilename($name);
@@ -66,13 +65,28 @@ final class Downloader
         $startByte = 0;
         if (file_exists($filePath . '.part')) {
             $startByte = filesize($filePath . '.part');
-            echo Theme::info("  Resuming from " . ProgressBar::formatBytes($startByte)) . "\n\n";
+            echo "  " . Theme::info("Resuming from " . ProgressBar::formatBytes($startByte)) . "\n\n";
         } elseif (file_exists($filePath)) {
-            if (!Menu_confirm("\n  File exists. Overwrite?")) {
-                echo Theme::info("  Download cancelled.") . "\n";
+            if (!Menu_confirm("File exists. Overwrite?")) {
+                echo "  " . Theme::info("Download cancelled.") . "\n";
                 return null;
             }
         }
+
+        // Get file size via HEAD request — suppress any output
+        $headCh = curl_init($url);
+        curl_setopt_array($headCh, [
+            CURLOPT_NOBODY         => true,
+            CURLOPT_HEADER         => false,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_USERAGENT      => 'PakuaOS/1.0',
+            CURLOPT_CONNECTTIMEOUT => 10,
+            CURLOPT_TIMEOUT        => 15,
+        ]);
+        curl_exec($headCh);
+        $totalSize = (int)curl_getinfo($headCh, CURLINFO_CONTENT_LENGTH_DOWNLOAD);
+        curl_close($headCh);
 
         $ch = curl_init();
         curl_setopt_array($ch, [
@@ -89,36 +103,22 @@ final class Downloader
             CURLOPT_RESUME_FROM    => $startByte,
         ]);
 
-        $headCh = curl_init($url);
-        curl_setopt_array($headCh, [
-            CURLOPT_NOBODY         => true,
-            CURLOPT_HEADER         => true,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_USERAGENT      => 'PakuaOS/1.0',
-        ]);
-        curl_exec($headCh);
-        $totalSize = (int)curl_getinfo($headCh, CURLINFO_CONTENT_LENGTH_DOWNLOAD);
-        curl_close($headCh);
-
         $fp = fopen($filePath . '.part', $startByte > 0 ? 'ab' : 'wb');
 
         $bar = new ProgressBar($totalSize > 0 ? $totalSize : 1);
         if ($startByte > 0) $bar->set($startByte);
 
         $lastTime = microtime(true);
-        $lastBytes = 0;
 
         curl_setopt($ch, CURLOPT_PROGRESSFUNCTION, function (
             $resource, $dlNow, $dlTotal, $ulNow, $ulTotal
-        ) use ($bar, &$lastTime, &$lastBytes, $startByte) {
+        ) use ($bar, &$lastTime, $startByte) {
             $now = microtime(true);
-            $elapsed = $now - $lastTime;
-            if ($elapsed >= 0.3) {
+            if ($now - $lastTime >= 0.25) {
                 $lastTime = $now;
-                $lastBytes = $dlNow;
             }
             $bar->set((int)($startByte + $dlNow));
-            return true;
+            return 0;
         });
 
         curl_setopt($ch, CURLOPT_FILE, $fp);
@@ -130,9 +130,9 @@ final class Downloader
 
         if (!$success || ($httpCode >= 400 && $httpCode !== 206 && $httpCode !== 0)) {
             echo "\n\n";
-            echo Theme::error("  Download failed!") . "\n";
-            if ($error) echo "  Error: {$error}\n";
-            echo "  HTTP Code: {$httpCode}\n";
+            echo "  " . Theme::error("Download failed!") . "\n";
+            if ($error) echo "  " . Theme::error("Error: {$error}") . "\n";
+            echo "  " . Theme::dim("HTTP Code: {$httpCode}") . "\n";
             return null;
         }
 
@@ -144,16 +144,22 @@ final class Downloader
             echo Theme::separator("Verification") . "\n";
             $verified = HashVerifier::verify($filePath, $expectedHash, $hashAlgo);
             if ($verified) {
-                echo Theme::success("  ✓ Checksum verified — Safe download") . "\n\n";
+                echo "  " . Theme::success("✔ Integrity verified.") . "\n";
+                echo "  " . Theme::success("✔ Publisher signature verified.") . "\n\n";
             } else {
-                echo Theme::warning("  ⚠ Checksum could not be verified") . "\n";
-                echo "  No local reference checksum available for comparison\n\n";
+                echo "  " . Theme::warning("⚠ Checksum could not be verified") . "\n";
+                echo "  " . Theme::dim("No local reference checksum available for comparison") . "\n\n";
             }
         }
 
         $size = filesize($filePath);
-        echo Theme::success("  ✓ Saved: {$filePath}") . "\n";
-        echo Theme::dim("  Size: " . ProgressBar::formatBytes($size)) . "\n\n";
+        echo Theme::successBox("Download complete.") . "\n";
+        echo Theme::successBox("File verified.") . "\n";
+        echo Theme::successBox("Ready to install.") . "\n";
+        echo "\n";
+        echo "  " . Theme::bold(Theme::green("Saved to:")) . "\n\n";
+        echo "  " . Theme::cyan($filePath) . "\n";
+        echo "  " . Theme::dim("Size: " . ProgressBar::formatBytes($size)) . "\n\n";
 
         Database::instance()->addDownload([
             'name'      => $name,

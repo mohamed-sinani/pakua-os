@@ -12,6 +12,11 @@ use PakuaOS\Commands\MenuCommand;
 
 final class PakuaOS extends Application
 {
+    public function __construct()
+    {
+        parent::__construct('PakuaOS', '1.0');
+    }
+
     public function boot(): void
     {
         $this->add(new SearchCommand());
