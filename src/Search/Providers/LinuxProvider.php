@@ -13,7 +13,7 @@ final class LinuxProvider implements Provider
                 '24.04.2 LTS "Noble Numbat"' => [
                     'architectures' => ['amd64', 'arm64', 'armhf'],
                     'types' => ['Desktop', 'Server', 'Minimal'],
-                    'url_pattern' => 'https://releases.ubuntu.com/{version}/ubuntu-{version}-desktop-amd64.iso',
+                    'url_pattern' => 'https://releases.ubuntu.com/24.04.2/ubuntu-24.04.2-desktop-amd64.iso',
                     'source' => 'Official Ubuntu Mirror',
                     'verified' => true,
                 ],

@@ -78,9 +78,11 @@ final class MenuCommand extends Command
 
         $spinner = new Spinner('Searching ' . $category . '...');
         $spinner->start();
-        $allResults = $engine->searchCategory($category, '', function (string $p) use ($spinner) {
+        $allResults = $engine->searchCategory('operating_systems', '', function (string $p) use ($spinner) {
             $spinner->updateMessage('Searching: ' . $p);
         });
+        // Filter by selected OS family
+        $allResults = array_values(array_filter($allResults, fn($r) => ($r['category'] ?? '') === $category));
         $spinner->stop('Found ' . count($allResults) . ' results.');
 
         // Step 2: Group by distro name

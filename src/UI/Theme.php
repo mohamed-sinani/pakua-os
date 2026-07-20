@@ -94,25 +94,6 @@ final class Theme
         echo '  ' . $bold($white('Instagram')) . ' : ' . $blue('https://instagram.com/dev_meddy') . "\n";
         echo '  ' . $bold($white('Email')) . '     : ' . $blue('dev@mohamedsinani.com') . "\n";
         echo "\n";
-        echo "  " . $cyan(str_repeat('─', $w)) . "\n";
-        echo "\n";
-
-        // Welcome box
-        echo "  " . $cyan('╭' . str_repeat('─', $w - 2) . '╮') . "\n";
-        echo "  " . $cyan('│') . str_repeat(' ', $w - 2) . $cyan('│') . "\n";
-        echo "  " . $cyan('│') . str_repeat(' ', 28) . $bold($white('PakuaOS v1.0')) . str_repeat(' ', 28) . $cyan('│') . "\n";
-        echo "  " . $cyan('│') . str_repeat(' ', 16) . $dim('Software & Operating System Hub') . str_repeat(' ', 16) . $cyan('│') . "\n";
-        echo "  " . $cyan('│') . str_repeat(' ', $w - 2) . $cyan('│') . "\n";
-        echo "  " . $cyan('│') . str_repeat(' ', 18) . $green('Find') . ' ' . $dim('•') . ' ' . $green('Verify') . ' ' . $dim('•') . ' ' . $green('Download') . ' ' . $dim('Safely') . str_repeat(' ', 18) . $cyan('│') . "\n";
-        echo "  " . $cyan('│') . str_repeat(' ', $w - 2) . $cyan('│') . "\n";
-        echo "  " . $cyan('├' . str_repeat('─', $w - 2) . '┤') . "\n";
-        echo "  " . $cyan('│') . ' ' . $bold($white('Developer')) . ' : ' . $cyan('Mohamed Sinani') . $dim(' (Dev_Meddy)') . str_repeat(' ', $w - 49 - 4) . $cyan('│') . "\n";
-        echo "  " . $cyan('│') . ' ' . $bold($white('GitHub')) . '    : ' . $blue('github.com/mohamed-sinani') . str_repeat(' ', $w - 38 - 4) . $cyan('│') . "\n";
-        echo "  " . $cyan('│') . ' ' . $bold($white('Website')) . '   : ' . $blue('dev.mohamedsinani.com') . str_repeat(' ', $w - 36 - 4) . $cyan('│') . "\n";
-        echo "  " . $cyan('│') . ' ' . $bold($white('Instagram')) . ' : ' . $blue('instagram.com/dev_meddy') . str_repeat(' ', $w - 34 - 4) . $cyan('│') . "\n";
-        echo "  " . $cyan('│') . ' ' . $bold($white('Email')) . '     : ' . $blue('dev@mohamedsinani.com') . str_repeat(' ', $w - 33 - 4) . $cyan('│') . "\n";
-        echo "  " . $cyan('╰' . str_repeat('─', $w - 2) . '╯') . "\n";
-        echo "\n";
     }
 
     public static function separator(string $title = ''): string
