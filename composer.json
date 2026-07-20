@@ -3,7 +3,20 @@
     "description": "Universal OS and software setup manager CLI — Find. Verify. Install.",
     "type": "project",
     "license": "MIT",
-    "keywords": ["cli", "download", "operating-system", "software", "iso", "package-manager"],
+    "keywords": ["cli", "download", "operating-system", "software", "iso", "package-manager", "linux", "windows", "macos"],
+    "authors": [
+        {
+            "name": "Mohamed Sinani",
+            "email": "dev@mohamedsinani.com",
+            "homepage": "https://dev.mohamedsinani.com"
+        }
+    ],
+    "homepage": "https://github.com/mohamed-sinani/pakuaos",
+    "support": {
+        "issues": "https://github.com/mohamed-sinani/pakuaos/issues",
+        "source": "https://github.com/mohamed-sinani/pakuaos",
+        "docs": "https://github.com/mohamed-sinani/pakuaos#readme"
+    },
     "autoload": {
         "psr-4": {
             "PakuaOS\\": "src/"
@@ -17,7 +30,12 @@
         "ext-curl": "*",
         "ext-json": "*",
         "ext-mbstring": "*",
-        "symfony/console": "^7.0",
-        "guzzlehttp/guzzle": "^7.0"
-    }
+        "symfony/console": "^7.0"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {}
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
 }
