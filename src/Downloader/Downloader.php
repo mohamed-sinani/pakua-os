@@ -26,10 +26,10 @@ final class Downloader
     {
         if (PHP_OS_FAMILY === 'Windows') {
             $home = getenv('USERPROFILE') ?: getenv('HOMEDRIVE') . getenv('HOMEPATH');
-            return $home . '\Downloads';
+            return $home . '\Downloads\PakuaOS';
         }
         $home = $_SERVER['HOME'] ?? getenv('HOME');
-        return $home . '/Downloads';
+        return $home . '/Downloads/PakuaOS';
     }
 
     private function resolveDir(?string $category): string
