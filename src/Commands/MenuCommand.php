@@ -148,19 +148,8 @@ final class MenuCommand extends Command
                     $versionResults = $versions[$chosenVer];
 
                     // Step 5: Pick architecture
-                    if (count($versionResults) > 1) {
-                        $archOptions = [];
-                        foreach ($versionResults as $r) {
-                            $archOptions[] = ['label' => $r['platform'], 'desc' => $r['type']];
-                        }
-
-                        $archIdx = Menu::select('Select Architecture', $archOptions);
-                        if ($archIdx === null) break; // back to version
-
-                        $final = $versionResults[$archIdx];
-                    } else {
-                        $final = $versionResults[0];
-                    }
+                    $final = $this->pickArchitecture($versionResults);
+                    if ($final === null) break; // back to version
 
                     $this->showDetailsAndDownload($final, 'os');
                     break; // done, exit version loop
@@ -290,6 +279,79 @@ final class MenuCommand extends Command
             },
             null => null,
         };
+    }
+
+    // ─── Architecture Detection ─────────────────────────────────────────
+
+    private function detectArch(): string
+    {
+        $machine = php_uname('m');
+        return match (true) {
+            str_starts_with($machine, 'x86_64'), str_starts_with($machine, 'amd64') => 'x64',
+            str_starts_with($machine, 'aarch64'), str_starts_with($machine, 'arm64') => 'arm64',
+            str_starts_with($machine, 'armv7l') => 'armhf',
+            str_contains($machine, 'i686'), str_contains($machine, 'i386') => 'i386',
+            default => $machine,
+        };
+    }
+
+    private function archLabel(string $arch): string
+    {
+        return match ($arch) {
+            'amd64', 'x64', 'x86_64' => 'x86_64 (Intel / AMD)',
+            'arm64', 'aarch64'       => 'ARM64 (Apple Silicon / Raspberry Pi 4+)',
+            'armhf'                  => 'ARM (Raspberry Pi 2/3)',
+            'i386'                   => 'x86 (32-bit)',
+            default                  => $arch,
+        };
+    }
+
+    private function resolveArch(array $versionResults, string $targetArch): ?array
+    {
+        $aliases = [
+            'x64'     => ['amd64', 'x64', 'x86_64'],
+            'amd64'   => ['amd64', 'x64', 'x86_64'],
+            'x86_64'  => ['amd64', 'x64', 'x86_64'],
+            'arm64'   => ['arm64', 'aarch64'],
+            'aarch64' => ['arm64', 'aarch64'],
+            'armhf'   => ['armhf'],
+            'i386'    => ['i386'],
+        ];
+        $candidates = $aliases[$targetArch] ?? [$targetArch];
+
+        foreach ($versionResults as $r) {
+            $p = strtolower($r['platform'] ?? '');
+            if (in_array($p, $candidates)) return $r;
+        }
+        return null;
+    }
+
+    private function pickArchitecture(array $versionResults): ?array
+    {
+        if (count($versionResults) === 1) return $versionResults[0];
+
+        $detected = $this->detectArch();
+
+        $target = Menu::select('Architecture', [
+            ['label' => 'This PC',   'desc' => 'Auto-detect: ' . $this->archLabel($detected)],
+            ['label' => 'Other PC',  'desc' => 'Choose architecture manually'],
+        ]);
+
+        if ($target === null) return null;
+
+        if ($target === 0) {
+            $match = $this->resolveArch($versionResults, $detected);
+            if ($match) return $match;
+            echo "\n  " . Theme::warning("No match for {$detected}, showing all options...") . "\n\n";
+        }
+
+        $archOptions = [];
+        foreach ($versionResults as $r) {
+            $archOptions[] = ['label' => $this->archLabel($r['platform']), 'desc' => $r['type']];
+        }
+        $archIdx = Menu::select('Select Architecture', $archOptions);
+        if ($archIdx === null) return null;
+        return $versionResults[$archIdx];
     }
 
     // ─── Helpers ───────────────────────────────────────────────────────
