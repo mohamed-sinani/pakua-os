@@ -28,7 +28,7 @@ php composer-setup.php --install-dir=C:\bin --filename=composer
 **Step 4** — Install PakuaOS
 
 ```powershell
-composer create-project pakuaos/app
+composer create-project pakuaos/pakua
 cd app
 ```
 
@@ -61,7 +61,7 @@ sudo php composer-setup.php --install-dir=/usr/local/bin --filename=composer
 **Step 4** — Install PakuaOS
 
 ```bash
-composer create-project pakuaos/app
+composer create-project pakuaos/pakua
 cd app
 ```
 
@@ -77,20 +77,16 @@ php pakuaos
 
 **Step 1** — Open **Terminal** (Spotlight → type "Terminal")
 
-**Step 2** — Install PHP
+**Step 2** — Install Homebrew (if you don't have it)
 
-```bash
-brew install php
-```
-
-*Don't have Homebrew? Install it first:*
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-**Step 3** — Install Composer
+**Step 3** — Install PHP and Composer
 
 ```bash
+brew install php
 php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
 sudo php composer-setup.php --install-dir=/usr/local/bin --filename=composer
 ```
@@ -98,7 +94,7 @@ sudo php composer-setup.php --install-dir=/usr/local/bin --filename=composer
 **Step 4** — Install PakuaOS
 
 ```bash
-composer create-project pakuaos/app
+composer create-project pakuaos/pakua
 cd app
 ```
 

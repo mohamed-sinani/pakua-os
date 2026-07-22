@@ -1,5 +1,5 @@
 {
-    "name": "pakuaos/app",
+    "name": "pakuaos/pakua",
     "description": "CLI tool for finding and downloading operating systems — Find. Verify. Install.",
     "type": "project",
     "license": "MIT",
