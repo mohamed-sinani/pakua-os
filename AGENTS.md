@@ -6,7 +6,7 @@
 
 ## Project Overview
 
-PakuaOS is a PHP CLI tool for finding and downloading operating systems and software. It uses Symfony Console for the CLI framework and cURL for downloads.
+PakuaOS is a PHP CLI tool for finding and downloading operating systems. It uses Symfony Console for the CLI framework and cURL for downloads.
 
 - **Language:** PHP 8.2+
 - **Framework:** Symfony Console 7.x
@@ -23,7 +23,7 @@ bin/pakuaos                          # CLI entry point
 src/
 ├── Application/PakuaOS.php          # App boot & command registration
 ├── Commands/
-│   ├── MenuCommand.php              # Default: interactive menu (378 lines)
+│   ├── MenuCommand.php              # Default: interactive menu
 │   ├── SearchCommand.php            # `pakuaos search <query>`
 │   ├── DownloadCommand.php          # `pakuaos download <url>`
 │   └── HistoryCommand.php           # `pakuaos history`
@@ -35,13 +35,7 @@ src/
 │       ├── Provider.php             # Interface
 │       ├── LinuxProvider.php        # Curated: Ubuntu, Debian, Fedora, Arch, Kali, Mint, openSUSE
 │       ├── WindowsProvider.php      # Curated: Win11 25H2, Win11 23H2, Win10 22H2, Server 2022
-│       ├── MacOSProvider.php        # Curated: Sequoia, Sonoma, Ventura
-│       ├── SoftwareProvider.php     # Curated: 13 apps (Firefox, Chrome, VS Code, etc.)
-│       ├── GitHubProvider.php       # Live: GitHub Releases API
-│       ├── ChocolateyProvider.php   # Live: Chocolatey API
-│       ├── SnapProvider.php         # Live: Snapcraft API
-│       ├── WingetProvider.php       # Live: Winget API
-│       └── WebSearchProvider.php    # Live: DuckDuckGo + known sites
+│       └── MacOSProvider.php        # Curated: Sequoia, Sonoma, Ventura
 ├── UI/
 │   ├── Theme.php                    # ANSI colors, banner, separators
 │   ├── Table.php                    # Box-drawing table renderer
@@ -59,16 +53,13 @@ src/
 ```
 bin/pakuaos → PakuaOS::boot() → MenuCommand (default)
   ├── Operating Systems → handleOS() → OS providers → distro/version/arch picker → download
-  ├── Software Setup    → handleSoftware() → software providers → displayResults() → download
-  ├── Search Everything → handleEverything() → ALL providers → displayResults() → download
   ├── Download by URL   → handleDirectDownload() → Downloader
   ├── My Downloads      → handleHistory() → Database → Table
   └── Settings          → handleSettings() → Database
 ```
 
 ### Provider System
-- **Curated providers** (offline): LinuxProvider, WindowsProvider, MacOSProvider, SoftwareProvider
-- **Live API providers**: GitHubProvider, ChocolateyProvider, SnapProvider, WingetProvider, WebSearchProvider
+- **Curated providers** (offline): LinuxProvider, WindowsProvider, MacOSProvider
 - All implement `Provider` interface: `getName()`, `getCategory()`, `search(query)`, `isAvailable()`
 - SearchEngine orchestrates, deduplicates by `md5(name|version|platform|url)`
 
@@ -97,7 +88,7 @@ Downloader::download(url, name, hash, algo, category, fallbackUrls)
   "hash_type": "sha256",
   "hash_value": "...",
   "source": "hostname",
-  "category": "os|programs|other",
+  "category": "os|other",
   "created_at": "2026-07-20 12:00:00",
   "updated_at": "2026-07-20 12:05:00"
 }
@@ -109,9 +100,6 @@ Downloader::download(url, name, hash, algo, category, fallbackUrls)
 
 ### Adding a new OS distro
 Edit `src/Search/Providers/LinuxProvider.php` or `WindowsProvider.php`. Add entry to `$versions` array with: name, architectures, url, size, source, verified, distro_label, distro_desc, fallback_urls.
-
-### Adding new software
-Edit `src/Search/Providers/SoftwareProvider.php`. Add entry to `$apps` array with platform-specific URLs.
 
 ### Adding a new search provider
 1. Create `src/Search/Providers/MyProvider.php` implementing `Provider`
@@ -144,13 +132,12 @@ $choice = Menu::select('Title', [
 
 ## Important Notes
 
-1. **No SQLite** — Despite README, database is plain JSON files at `~/.pakuaos/`
-2. **Guzzle unused** — Declared in composer.json but all HTTP uses raw cURL
+1. **JSON database** — Database is plain JSON files at `~/.pakuaos/`
+2. **cURL only** — All HTTP uses raw cURL functions
 3. **Spinner is static** — Shows one frame, no animation (PHP CLI limitation)
 4. **Cross-platform** — Downloader handles both Unix and Windows paths
 5. **Fallback URLs** — WindowsProvider has archive.org mirrors for when Microsoft links expire
 6. **Resume support** — Downloads use `.part` files with `CURLOPT_RESUME_FROM`
-7. **The `Sources/` directory is empty** — Unused planned namespace
 
 ---
 
@@ -160,13 +147,13 @@ $choice = Menu::select('Title', [
 # Run interactive menu (default)
 ./bin/pakuaos
 
-# Search for software
-./bin/pakuaos search vscode
-./bin/pakuaos find chrome
+# Search for operating systems
+./bin/pakuaos search ubuntu
+./bin/pakuaos find windows
 
 # Download by URL
 ./bin/pakuaos download https://example.com/file.zip
-./bin/pakuaos dl https://example.com/file.zip --os
+./bin/pakuaos dl https://example.com/file.zip
 
 # View history
 ./bin/pakuaos history
@@ -177,6 +164,6 @@ $choice = Menu::select('Title', [
 
 ## Last Updated
 
-- **Date:** 2026-07-20
-- **Version:** 1.0
-- **Changes:** Added fallback download URLs (archive.org), updated Windows 11 to 25H2, added distro labels, implemented cross-session resume
+- **Date:** 2026-07-22
+- **Version:** 2.0
+- **Changes:** Removed all software/app downloading functionality. PakuaOS now focuses exclusively on operating systems. Renamed composer package to `pakuaos/app`.
