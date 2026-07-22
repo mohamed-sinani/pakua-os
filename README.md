@@ -6,7 +6,7 @@ PakuaOS is a CLI tool for downloading operating systems (Ubuntu, Windows, Kali, 
 
 ---
 
-## How to Install 
+## How to Install
 
 ### Windows
 
@@ -28,14 +28,13 @@ php composer-setup.php --install-dir=C:\bin --filename=composer
 **Step 4** — Install PakuaOS
 
 ```powershell
-composer require pakuaos/pakua
-cd app
+composer global require pakuaos/pakua
 ```
 
 **Step 5** — Run
 
 ```powershell
-vendor/bin/pakuaos
+pakuaos
 ```
 
 ---
@@ -61,14 +60,13 @@ sudo php composer-setup.php --install-dir=/usr/local/bin --filename=composer
 **Step 4** — Install PakuaOS
 
 ```bash
-composer require pakuaos/pakua
-cd app
+composer global require pakuaos/pakua
 ```
 
 **Step 5** — Run
 
 ```bash
-vendor/bin/pakuaos
+pakuaos
 ```
 
 ---
@@ -94,14 +92,13 @@ sudo php composer-setup.php --install-dir=/usr/local/bin --filename=composer
 **Step 4** — Install PakuaOS
 
 ```bash
-composer require pakuaos/pakua
-cd app
+composer global require pakuaos/pakua
 ```
 
 **Step 5** — Run
 
 ```bash
-vendor/bin/pakuaos
+pakuaos
 ```
 
 ---
