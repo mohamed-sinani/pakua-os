@@ -398,12 +398,15 @@ final class MenuCommand extends Command
         $all = array_merge($resumable, $downloading);
         $orphans = [];
         foreach ($all as $dl) {
-            $partPath = ($dl['file_path'] ?? '') . '.part';
             $filePath = $dl['file_path'] ?? '';
-            if (file_exists($partPath) || file_exists($filePath . '.part')) {
-                $orphans[] = $dl;
-            } elseif (file_exists($filePath)) {
-                $db->updateDownload($dl['id'], ['status' => 'completed']);
+            if (file_exists($filePath) && filesize($filePath) > 0) {
+                $fileSize = filesize($filePath);
+                $expected = (int)($dl['file_size'] ?? 0);
+                if ($expected > 0 && $fileSize < $expected) {
+                    $orphans[] = $dl;
+                } else {
+                    $db->updateDownload($dl['id'], ['status' => 'completed']);
+                }
             } else {
                 $db->updateDownload($dl['id'], ['status' => 'failed']);
             }
@@ -414,9 +417,8 @@ final class MenuCommand extends Command
         echo Theme::warning("⚡ Found " . count($orphans) . " interrupted download(s):") . "\n\n";
 
         foreach ($orphans as $i => $dl) {
-            $partPath = $dl['file_path'] ?? '';
-            if (!file_exists($partPath)) $partPath .= '.part';
-            $partialSize = file_exists($partPath) ? filesize($partPath) : 0;
+            $filePath = $dl['file_path'] ?? '';
+            $partialSize = file_exists($filePath) ? filesize($filePath) : 0;
             echo "  " . Theme::cyan((string)($i + 1)) . ". " . Theme::bold($dl['name'] ?? 'unknown');
             echo " — " . Theme::dim(ProgressBar::formatBytes($partialSize) . " downloaded");
             echo " — " . Theme::dim($dl['url'] ?? '') . "\n";

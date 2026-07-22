@@ -16,6 +16,7 @@ final class Downloader
     private string $hashAlgo = 'sha256';
     private ?string $category = null;
     private ?int $currentDownloadId = null;
+    private string $lastError = '';
 
     public function __construct(?string $baseDir = null)
     {
@@ -72,20 +73,14 @@ final class Downloader
         $db = Database::instance();
 
         $startByte = 0;
-        if (file_exists($filePath . '.part')) {
-            $startByte = filesize($filePath . '.part');
+        if (file_exists($filePath)) {
+            $startByte = filesize($filePath);
             $existing = $db->getDownloadsByStatus('downloading');
-            $existing = array_filter($existing, fn($d) => ($d['file_path'] ?? '') === $filePath . '.part');
+            $existing = array_filter($existing, fn($d) => ($d['file_path'] ?? '') === $filePath);
             if (!empty($existing)) {
-                $dlRec = reset($existing);
                 echo "  " . Theme::info("Resuming from " . ProgressBar::formatBytes($startByte) . " (previous session)") . "\n\n";
             } else {
                 echo "  " . Theme::info("Resuming from " . ProgressBar::formatBytes($startByte)) . "\n\n";
-            }
-        } elseif (file_exists($filePath)) {
-            if (!Menu_confirm("File exists. Overwrite?")) {
-                echo "  " . Theme::info("Download cancelled.") . "\n";
-                return null;
             }
         }
 
@@ -93,7 +88,7 @@ final class Downloader
         $dlId = $db->addDownload([
             'name'       => basename($filePath),
             'url'        => $url,
-            'file_path'  => $filePath . '.part',
+            'file_path'  => $filePath,
             'file_size'  => 0,
             'downloaded' => $startByte,
             'status'     => 'downloading',
@@ -111,29 +106,34 @@ final class Downloader
 
         // Try primary URL first, then fallbacks
         $allUrls = array_merge([$url], $fallbackUrls);
+        $lastError = '';
         foreach ($allUrls as $attempt => $tryUrl) {
+            $isLast = ($attempt === count($allUrls) - 1);
+
             if ($attempt > 0) {
-                echo "\n  " . Theme::warning("Trying fallback source (attempt " . ($attempt + 1) . "/" . count($allUrls) . ")...") . "\n";
-                echo "  " . Theme::dim('URL: ' . $tryUrl) . "\n\n";
+                echo "\n";
+                echo "  " . Theme::dim("Trying next source (" . ($attempt + 1) . "/" . count($allUrls) . ")...") . "\n\n";
             }
 
-            $result = $this->tryDownload($tryUrl, $filePath, $startByte);
+            $result = $this->tryDownload($tryUrl, $filePath, $startByte, $isLast);
             if ($result !== null) {
                 return $result;
             }
 
-            // Reset startByte for fallback attempts
+            $lastError = $this->lastError;
             $startByte = 0;
         }
 
         // All attempts failed
-        echo "\n\n";
-        echo "  " . Theme::error("All download sources failed!") . "\n";
-        echo "  " . Theme::dim("Tried " . count($allUrls) . " source(s)") . "\n";
+        echo "\n";
+        echo "  " . Theme::error("All download sources failed.") . "\n";
+        if ($lastError) {
+            echo "  " . Theme::dim("Last error: " . $lastError) . "\n";
+        }
         return null;
     }
 
-    private function tryDownload(string $url, string $filePath, int $startByte): ?string
+    private function tryDownload(string $url, string $filePath, int $startByte, bool $isLast = false): ?string
     {
         // Get file size via HEAD request
         $headCh = curl_init($url);
@@ -173,7 +173,7 @@ final class Downloader
             CURLOPT_BUFFERSIZE     => 65536,
         ]);
 
-        $fp = fopen($filePath . '.part', $startByte > 0 ? 'ab' : 'wb');
+        $fp = fopen($filePath, $startByte > 0 ? 'ab' : 'wb');
         $totalSize = max($totalSize, 1);
 
         while (ob_get_level()) ob_end_flush();
@@ -235,23 +235,20 @@ final class Downloader
         echo "\n";
 
         if (!$success || ($httpCode >= 400 && $httpCode !== 206 && $httpCode !== 0)) {
-            echo "\n\n";
-            echo "  " . Theme::error("Download failed!") . "\n";
-            if ($error) echo "  " . Theme::error("Error: {$error}") . "\n";
-            echo "  " . Theme::dim("HTTP Code: {$httpCode}") . "\n";
+            $this->lastError = $error ?: "HTTP {$httpCode}";
             if ($this->currentDownloadId) {
                 Database::instance()->updateDownload($this->currentDownloadId, [
                     'status' => 'resumable',
-                    'downloaded' => $startByte + (int)@filesize($filePath . '.part'),
+                    'downloaded' => $startByte + (int)@filesize($filePath),
                 ]);
             }
             return null;
         }
 
-        $finalSize = filesize($filePath . '.part');
-        rename($filePath . '.part', $filePath);
-        $bar->finish();
-        echo "\n";
+        $finalSize = filesize($filePath);
+        fprintf(STDOUT, "\r  %-78s", str_repeat(' ', 78));
+        fprintf(STDOUT, "\r  [████████████████████████████████████████] 100%% Done\n");
+        flush();
 
         if ($this->expectedHash) {
             echo Theme::separator("Verification") . "\n";
