@@ -176,7 +176,7 @@ final class Downloader
             $resource, $dlNow, $dlTotal, $ulNow, $ulTotal
         ) use ($bar, &$lastTime, $startByte) {
             $now = microtime(true);
-            if ($now - $lastTime >= 0.25) {
+            if ($now - $lastTime >= 0.1) {
                 $lastTime = $now;
                 $bar->set((int)($startByte + $dlNow));
                 flush();

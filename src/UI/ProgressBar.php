@@ -11,8 +11,9 @@ final class ProgressBar
     private int $width;
     private float $startTime;
     private string $label;
+    private float $lastDrawTime = 0;
 
-    public function __construct(int $total, int $width = 30, string $label = '')
+    public function __construct(int $total, int $width = 40, string $label = '')
     {
         $this->total = max($total, 1);
         $this->width = $width;
@@ -41,6 +42,12 @@ final class ProgressBar
 
     public function draw(): void
     {
+        $now = microtime(true);
+        if ($now - $this->lastDrawTime < 0.1 && $this->current < $this->total) {
+            return;
+        }
+        $this->lastDrawTime = $now;
+
         $pct = $this->total > 0 ? ($this->current / $this->total) * 100 : 0;
         $filled = (int)round(($this->current / $this->total) * $this->width);
         $empty = $this->width - $filled;
@@ -51,7 +58,7 @@ final class ProgressBar
         $speed = $elapsed > 0 ? $this->current / $elapsed : 0;
         $speedStr = self::formatBytes((int)$speed) . '/s';
 
-        $eta = '∞';
+        $eta = '—';
         if ($speed > 0 && $this->current < $this->total) {
             $remaining = $this->total - $this->current;
             $sec = (int)ceil($remaining / $speed);
@@ -63,15 +70,12 @@ final class ProgressBar
         $pctStr = number_format($pct, 0) . '%';
 
         $output = "\r\033[K";
-        if ($this->label) {
-            $output .= '  ' . Theme::bold($this->label) . "\n";
-        }
         $output .= '  ';
         $output .= '[' . $bar . '] ';
-        $output .= ($pct >= 100 ? Theme::bold(Theme::green($pctStr)) : Theme::cyan($pctStr)) . ' ';
-        $output .= Theme::dim($currentStr . ' / ' . $totalStr) . ' ';
-        $output .= Theme::dim($speedStr) . ' ';
-        $output .= Theme::dim('ETA: ' . $eta);
+        $output .= ($pct >= 100 ? Theme::bold(Theme::green($pctStr)) : Theme::cyan($pctStr));
+        $output .= '  ' . Theme::dim($currentStr . ' / ' . $totalStr);
+        $output .= '  ' . Theme::dim($speedStr);
+        $output .= '  ' . Theme::dim('ETA ' . $eta);
 
         if ($pct >= 100) {
             $output .= '  ' . Theme::green('✔');
