@@ -64,97 +64,109 @@ final class MenuCommand extends Command
     private function handleOS(SearchEngine $engine): void
     {
         // Step 1: Pick OS family
-        $cat = Menu::select('Select OS Family', [
-            ['label' => 'Linux',   'desc' => 'Ubuntu, Debian, Fedora, Arch, Kali, Mint, openSUSE...'],
-            ['label' => 'Windows', 'desc' => 'Windows 11, 10, Server'],
-            ['label' => 'macOS',   'desc' => 'Sequoia, Sonoma, Ventura'],
-        ]);
+        while (true) {
+            $cat = Menu::select('Select OS Family', [
+                ['label' => 'Linux',   'desc' => 'Ubuntu, Debian, Fedora, Arch, Kali, Mint, openSUSE...'],
+                ['label' => 'Windows', 'desc' => 'Windows 11, 10, Server'],
+                ['label' => 'macOS',   'desc' => 'Sequoia, Sonoma, Ventura'],
+            ]);
 
-        $category = match ($cat) {
-            0 => 'linux', 1 => 'windows', 2 => 'macos', default => 'linux',
-        };
+            if ($cat === null) return;
 
-        $spinner = new Spinner('Searching ' . $category . '...');
-        $spinner->start();
-        $allResults = $engine->searchCategory('operating_systems', '', function (string $p) use ($spinner) {
-            $spinner->updateMessage('Searching: ' . $p);
-        });
-        // Filter by selected OS family
-        $allResults = array_values(array_filter($allResults, fn($r) => ($r['category'] ?? '') === $category));
-        $spinner->stop('Found ' . count($allResults) . ' results.');
+            $category = match ($cat) {
+                0 => 'linux', 1 => 'windows', 2 => 'macos', default => 'linux',
+            };
 
-        // Step 2: Group by distro name
-        $groups = [];
-        $groupLabels = [];
-        $groupDescs = [];
-        foreach ($allResults as $r) {
-            $groupName = !empty($r['distro_label']) ? $r['distro_label'] : $this->extractDistroName($r['name']);
-            $groups[$groupName][] = $r;
-            if (!empty($r['distro_label'])) $groupLabels[$groupName] = $r['distro_label'];
-            if (!empty($r['distro_desc']))  $groupDescs[$groupName]  = $r['distro_desc'];
-        }
+            $spinner = new Spinner('Searching ' . $category . '...');
+            $spinner->start();
+            $allResults = $engine->searchCategory('operating_systems', '', function (string $p) use ($spinner) {
+                $spinner->updateMessage('Searching: ' . $p);
+            });
+            $allResults = array_values(array_filter($allResults, fn($r) => ($r['category'] ?? '') === $category));
+            $spinner->stop('Found ' . count($allResults) . ' results.');
 
-        // Step 3: Pick distro
-        $distroNames = array_keys($groups);
-        $distroOptions = [];
-        foreach ($distroNames as $dn) {
-            $count = count($groups[$dn]);
-            $label = $groupLabels[$dn] ?? $dn;
-            $desc  = $groupDescs[$dn]  ?? "{$count} version(s) available";
-            $distroOptions[] = ['label' => $label, 'desc' => $desc];
-        }
-
-        $distroIdx = Menu::select("Select {$category} Distribution", $distroOptions);
-        if ($distroIdx === null || ($distroIdx === 0 && count($distroOptions) === 0)) return;
-
-        $chosenDistro = $distroNames[$distroIdx] ?? null;
-        if (!$chosenDistro || !isset($groups[$chosenDistro])) return;
-
-        $distroResults = $groups[$chosenDistro];
-
-        // Step 4: Pick version
-        $versions = [];
-        foreach ($distroResults as $r) {
-            $ver = $r['version'] ?? 'latest';
-            $versions[$ver][] = $r;
-        }
-
-        $verNames = array_keys($versions);
-        if (count($verNames) > 1) {
-            $verOptions = [];
-            foreach ($verNames as $vn) {
-                $archs = array_unique(array_map(fn($r) => $r['platform'], $versions[$vn]));
-                $verOptions[] = ['label' => $vn, 'desc' => 'Arch: ' . implode(', ', $archs)];
-            }
-            $verOptions[] = ['label' => 'Latest', 'desc' => 'Use the newest version'];
-
-            $verIdx = Menu::select('Select Version', $verOptions);
-
-            if ($verIdx === count($verOptions) - 1) {
-                $chosenVer = $verNames[0];
-            } else {
-                $chosenVer = $verNames[$verIdx] ?? $verNames[0];
-            }
-        } else {
-            $chosenVer = $verNames[0];
-        }
-
-        $versionResults = $versions[$chosenVer];
-
-        // Step 5: Pick architecture
-        if (count($versionResults) > 1) {
-            $archOptions = [];
-            foreach ($versionResults as $r) {
-                $archOptions[] = ['label' => $r['platform'], 'desc' => $r['type']];
+            // Step 2: Group by distro name
+            $groups = [];
+            $groupLabels = [];
+            $groupDescs = [];
+            foreach ($allResults as $r) {
+                $groupName = !empty($r['distro_label']) ? $r['distro_label'] : $this->extractDistroName($r['name']);
+                $groups[$groupName][] = $r;
+                if (!empty($r['distro_label'])) $groupLabels[$groupName] = $r['distro_label'];
+                if (!empty($r['distro_desc']))  $groupDescs[$groupName]  = $r['distro_desc'];
             }
 
-            $archIdx = Menu::select('Select Architecture', $archOptions);
-            $final = $versionResults[$archIdx];
-        } else {
-            $final = $versionResults[0];
-        }
+            // Step 3: Pick distro
+            while (true) {
+                $distroNames = array_keys($groups);
+                $distroOptions = [];
+                foreach ($distroNames as $dn) {
+                    $count = count($groups[$dn]);
+                    $label = $groupLabels[$dn] ?? $dn;
+                    $desc  = $groupDescs[$dn]  ?? "{$count} version(s) available";
+                    $distroOptions[] = ['label' => $label, 'desc' => $desc];
+                }
 
-        $this->showDetailsAndDownload($final, 'os');
+                $distroIdx = Menu::select("Select {$category} Distribution", $distroOptions);
+                if ($distroIdx === null) break; // back to OS family
+
+                $chosenDistro = $distroNames[$distroIdx] ?? null;
+                if (!$chosenDistro || !isset($groups[$chosenDistro])) break;
+
+                $distroResults = $groups[$chosenDistro];
+
+                // Step 4: Pick version
+                $versions = [];
+                foreach ($distroResults as $r) {
+                    $ver = $r['version'] ?? 'latest';
+                    $versions[$ver][] = $r;
+                }
+
+                $verNames = array_keys($versions);
+
+                while (true) {
+                    if (count($verNames) > 1) {
+                        $verOptions = [];
+                        foreach ($verNames as $vn) {
+                            $archs = array_unique(array_map(fn($r) => $r['platform'], $versions[$vn]));
+                            $verOptions[] = ['label' => $vn, 'desc' => 'Arch: ' . implode(', ', $archs)];
+                        }
+                        $verOptions[] = ['label' => 'Latest', 'desc' => 'Use the newest version'];
+
+                        $verIdx = Menu::select('Select Version', $verOptions);
+                        if ($verIdx === null) break; // back to distro
+
+                        if ($verIdx === count($verOptions) - 1) {
+                            $chosenVer = $verNames[0];
+                        } else {
+                            $chosenVer = $verNames[$verIdx] ?? $verNames[0];
+                        }
+                    } else {
+                        $chosenVer = $verNames[0];
+                    }
+
+                    $versionResults = $versions[$chosenVer];
+
+                    // Step 5: Pick architecture
+                    if (count($versionResults) > 1) {
+                        $archOptions = [];
+                        foreach ($versionResults as $r) {
+                            $archOptions[] = ['label' => $r['platform'], 'desc' => $r['type']];
+                        }
+
+                        $archIdx = Menu::select('Select Architecture', $archOptions);
+                        if ($archIdx === null) break; // back to version
+
+                        $final = $versionResults[$archIdx];
+                    } else {
+                        $final = $versionResults[0];
+                    }
+
+                    $this->showDetailsAndDownload($final, 'os');
+                    break; // done, exit version loop
+                }
+            }
+        }
     }
 
     // ─── Direct Download ───────────────────────────────────────────────
@@ -196,6 +208,18 @@ final class MenuCommand extends Command
                 'resumable'  => Theme::warning('↻ Resumable'),
                 default      => Theme::dim('○ Queued'),
             };
+
+            if (in_array($row['status'] ?? '', ['resumable', 'downloading', 'paused'])) {
+                $fileSize = (int)($row['file_size'] ?? 0);
+                $downloaded = (int)($row['downloaded'] ?? 0);
+                if ($fileSize > 0 && $downloaded > 0) {
+                    $pct = min((int)(($downloaded / $fileSize) * 100), 99);
+                    $status = Theme::warning("↓ {$pct}%");
+                } elseif ($downloaded > 0) {
+                    $status = Theme::warning('↓ ' . \PakuaOS\UI\ProgressBar::formatBytes($downloaded));
+                }
+            }
+
             $size = $row['file_size'] ?? ($row['downloaded'] ?? 0);
             $sizeStr = $size > 0 ? \PakuaOS\UI\ProgressBar::formatBytes($size) : '—';
             $rows[] = [
@@ -215,16 +239,13 @@ final class MenuCommand extends Command
         $resumable = array_values(array_filter($all, fn($d) => in_array($d['status'] ?? '', ['resumable', 'downloading'])));
         if (!empty($resumable)) {
             echo "\n";
-            $idx = Menu::select('Action', array_merge(
-                [['label' => 'Back', 'desc' => 'Return to main menu']],
-                array_map(fn($d) => [
-                    'label' => 'Resume: ' . mb_substr($d['name'] ?? '', 0, 28),
-                    'desc' => 'Continue downloading',
-                ], $resumable)
-            ), true);
+            $idx = Menu::select('Resume Download', array_map(fn($d) => [
+                'label' => mb_substr($d['name'] ?? '', 0, 36),
+                'desc' => 'Continue downloading',
+            ], $resumable), true);
 
-            if ($idx > 0) {
-                $dlRec = $resumable[$idx - 1];
+            if ($idx !== null) {
+                $dlRec = $resumable[$idx];
                 $dl = new Downloader();
                 $dl->download(
                     $dlRec['url'],

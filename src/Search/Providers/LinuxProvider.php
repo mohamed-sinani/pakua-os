@@ -10,12 +10,16 @@ final class LinuxProvider implements Provider
         'ubuntu' => [
             'name' => 'Ubuntu',
             'versions' => [
-                '24.04.2 LTS "Noble Numbat"' => [
+                '24.04.4 LTS "Noble Numbat"' => [
                     'architectures' => ['amd64', 'arm64', 'armhf'],
                     'types' => ['Desktop', 'Server', 'Minimal'],
                     'url_pattern' => 'https://releases.ubuntu.com/24.04.2/ubuntu-24.04.2-desktop-amd64.iso',
                     'source' => 'Official Ubuntu Mirror',
                     'verified' => true,
+                    'fallback_urls' => [
+                        'https://releases.ubuntu.com/24.04.2/ubuntu-24.04.2-live-server-amd64.iso',
+                        'https://mirrors.iitd.ac.in/ubuntu-releases/24.04.2/ubuntu-24.04.2-desktop-amd64.iso',
+                    ],
                 ],
                 '22.04.5 LTS "Jammy Jellyfish"' => [
                     'architectures' => ['amd64', 'arm64', 'armhf'],
@@ -23,6 +27,9 @@ final class LinuxProvider implements Provider
                     'url_pattern' => 'https://releases.ubuntu.com/22.04/ubuntu-22.04.5-desktop-amd64.iso',
                     'source' => 'Official Ubuntu Mirror',
                     'verified' => true,
+                    'fallback_urls' => [
+                        'https://releases.ubuntu.com/22.04/ubuntu-22.04.5-live-server-amd64.iso',
+                    ],
                 ],
             ],
         ],
@@ -35,6 +42,9 @@ final class LinuxProvider implements Provider
                     'url_pattern' => 'https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-12.11.0-amd64-netinst.iso',
                     'source' => 'Official Debian Mirror',
                     'verified' => true,
+                    'fallback_urls' => [
+                        'https://cdimage.debian.org/debian-cd/current/amd64/iso-dvd/debian-12.11.0-amd64-DVD-1.iso',
+                    ],
                 ],
             ],
         ],
@@ -47,6 +57,7 @@ final class LinuxProvider implements Provider
                     'url_pattern' => 'https://download.fedoraproject.org/pub/fedora/linux/releases/42/Workstation/x86_64/iso/Fedora-Workstation-x86_64-42.iso',
                     'source' => 'Official Fedora Mirror',
                     'verified' => true,
+                    'fallback_urls' => [],
                 ],
                 'Fedora 41 Workstation' => [
                     'architectures' => ['x86_64', 'aarch64'],
@@ -54,6 +65,7 @@ final class LinuxProvider implements Provider
                     'url_pattern' => 'https://download.fedoraproject.org/pub/fedora/linux/releases/41/Workstation/x86_64/iso/Fedora-Workstation-x86_64-41.iso',
                     'source' => 'Official Fedora Mirror',
                     'verified' => true,
+                    'fallback_urls' => [],
                 ],
             ],
         ],
@@ -66,18 +78,34 @@ final class LinuxProvider implements Provider
                     'url_pattern' => 'https://geo.mirror.pkgbuild.com/iso/latest/archlinux-x86_64.iso',
                     'source' => 'Official Arch Linux Mirror',
                     'verified' => true,
+                    'fallback_urls' => [
+                        'https://mirrors.kernel.org/archlinux/iso/latest/archlinux-x86_64.iso',
+                    ],
                 ],
             ],
         ],
         'kali' => [
             'name' => 'Kali Linux',
             'versions' => [
+                'Kali 2025.4' => [
+                    'architectures' => ['amd64', 'arm64'],
+                    'types' => ['Installer', 'NetInstaller', 'Live'],
+                    'url_pattern' => 'https://cdimage.kali.org/kali-2025.4/kali-linux-2025.4-installer-amd64.iso',
+                    'source' => 'Official Kali Mirror',
+                    'verified' => true,
+                    'fallback_urls' => [
+                        'https://archive.org/download/kali-2025.4/kali-linux-2025.4-installer-amd64.iso',
+                    ],
+                ],
                 'Kali 2025.1' => [
                     'architectures' => ['amd64', 'arm64'],
                     'types' => ['Installer', 'NetInstaller', 'Live'],
                     'url_pattern' => 'https://cdimage.kali.org/kali-2025.1/kali-linux-2025.1-installer-amd64.iso',
                     'source' => 'Official Kali Mirror',
                     'verified' => true,
+                    'fallback_urls' => [
+                        'https://archive.org/download/kali-linux-2025.1-installer-amd64/kali-linux-2025.1-installer-amd64.iso',
+                    ],
                 ],
             ],
         ],
@@ -90,6 +118,9 @@ final class LinuxProvider implements Provider
                     'url_pattern' => 'https://mirror.cs.uchicago.edu/linuxmint-cd/stable/22.1/linuxmint-22.1-cinnamon-64bit.iso',
                     'source' => 'Official Linux Mint Mirror',
                     'verified' => true,
+                    'fallback_urls' => [
+                        'https://torrents.linuxmint.com/torrents/linuxmint-22.1-cinnamon-64bit.iso.torrent',
+                    ],
                 ],
             ],
         ],
@@ -102,6 +133,9 @@ final class LinuxProvider implements Provider
                     'url_pattern' => 'https://download.opensuse.org/distribution/leap/15.6/iso/openSUSE-Leap-15.6-DVD-x86_64-Media.iso',
                     'source' => 'Official openSUSE Mirror',
                     'verified' => true,
+                    'fallback_urls' => [
+                        'https://download.opensuse.org/distribution/leap/15.6/iso/openSUSE-Leap-15.6-NET-x86_64-Media.iso',
+                    ],
                 ],
             ],
         ],
@@ -122,16 +156,17 @@ final class LinuxProvider implements Provider
                 foreach ($distro['versions'] as $version => $info) {
                     foreach ($info['architectures'] as $arch) {
                         $results[] = [
-                            'name'        => $distro['name'] . ' ' . $version,
-                            'version'     => $version,
-                            'platform'    => $arch,
-                            'type'        => implode(' / ', $info['types']),
-                            'url'         => $info['url_pattern'],
-                            'source'      => $info['source'],
-                            'verified'    => $info['verified'],
-                            'hash_type'   => 'SHA256',
-                            'category'    => 'linux',
-                            'provider'    => $this->getName(),
+                            'name'          => $distro['name'] . ' ' . $version,
+                            'version'       => $version,
+                            'platform'      => $arch,
+                            'type'          => implode(' / ', $info['types']),
+                            'url'           => $info['url_pattern'],
+                            'source'        => $info['source'],
+                            'verified'      => $info['verified'],
+                            'hash_type'     => 'SHA256',
+                            'category'      => 'linux',
+                            'provider'      => $this->getName(),
+                            'fallback_urls' => $info['fallback_urls'] ?? [],
                         ];
                     }
                 }

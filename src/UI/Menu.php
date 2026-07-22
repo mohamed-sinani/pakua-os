@@ -43,11 +43,11 @@ final class Menu
         while (true) {
             echo '  ' . Theme::cyan('>') . ' ';
             $input = self::readLine();
-            if ($input === null) return $allowBack ? 0 : null;
-            if ($input === '' && $allowBack) return 0;
+            if ($input === null) return $allowBack ? null : null;
+            if ($input === '' && $allowBack) return null;
             if (is_numeric($input)) {
                 $choice = (int)$input;
-                if ($allowBack && $choice === 0) return 0;
+                if ($allowBack && $choice === 0) return null;
                 if ($choice >= 1 && $choice <= count($options)) {
                     return $choice - 1;
                 }

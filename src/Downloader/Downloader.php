@@ -147,6 +147,12 @@ final class Downloader
         $totalSize = (int)curl_getinfo($headCh, CURLINFO_CONTENT_LENGTH_DOWNLOAD);
         curl_close($headCh);
 
+        if ($totalSize > 0 && $this->currentDownloadId) {
+            Database::instance()->updateDownload($this->currentDownloadId, [
+                'file_size' => $totalSize,
+            ]);
+        }
+
         $ch = curl_init();
         curl_setopt_array($ch, [
             CURLOPT_URL            => $url,
