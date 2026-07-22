@@ -3,27 +3,19 @@
 
 declare(strict_types=1);
 
-$autoloadPaths = [
-    __DIR__ . '/vendor/autoload.php',
-    __DIR__ . '/../../../autoload.php',
-    dirname(__DIR__) . '/vendor/autoload.php',
-    dirname(dirname(__DIR__)) . '/autoload.php',
-    dirname(dirname(dirname(__DIR__))) . '/autoload.php',
-];
-
-$home = $_SERVER['HOME'] ?? getenv('HOME');
-if ($home) {
-    $autoloadPaths[] = $home . '/.config/composer/vendor/autoload.php';
-    $autoloadPaths[] = $home . '/.composer/vendor/autoload.php';
-}
-
 $loaded = false;
-foreach ($autoloadPaths as $path) {
-    if (file_exists($path)) {
-        require $path;
+$dir = __DIR__;
+
+for ($i = 0; $i < 10; $i++) {
+    $candidate = $dir . '/vendor/autoload.php';
+    if (file_exists($candidate)) {
+        require $candidate;
         $loaded = true;
         break;
     }
+    $parent = dirname($dir);
+    if ($parent === $dir) break;
+    $dir = $parent;
 }
 
 if (!$loaded) {
