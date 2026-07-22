@@ -6,7 +6,16 @@ declare(strict_types=1);
 $autoloadPaths = [
     __DIR__ . '/vendor/autoload.php',
     __DIR__ . '/../../../autoload.php',
+    dirname(__DIR__) . '/vendor/autoload.php',
+    dirname(dirname(__DIR__)) . '/autoload.php',
+    dirname(dirname(dirname(__DIR__))) . '/autoload.php',
 ];
+
+$home = $_SERVER['HOME'] ?? getenv('HOME');
+if ($home) {
+    $autoloadPaths[] = $home . '/.config/composer/vendor/autoload.php';
+    $autoloadPaths[] = $home . '/.composer/vendor/autoload.php';
+}
 
 $loaded = false;
 foreach ($autoloadPaths as $path) {
