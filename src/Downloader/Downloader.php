@@ -64,6 +64,9 @@ final class Downloader
         echo "\n";
 
         $filename = $this->sanitizeFilename($name);
+        if ($category === 'os' && !str_ends_with(strtolower($filename), '.iso')) {
+            $filename .= '.iso';
+        }
         $filePath = $dir . '/' . $filename;
 
         $db = Database::instance();
@@ -161,6 +164,7 @@ final class Downloader
             CURLOPT_USERAGENT      => 'PakuaOS/1.0',
             CURLOPT_BINARYTRANSFER => true,
             CURLOPT_RETURNTRANSFER => false,
+            CURLOPT_NOPROGRESS     => false,
             CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_SSL_VERIFYHOST => 2,
             CURLOPT_CONNECTTIMEOUT => 30,
