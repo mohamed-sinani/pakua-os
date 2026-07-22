@@ -12,14 +12,14 @@ PakuaOS is a PHP CLI tool for finding and downloading operating systems. It uses
 - **Framework:** Symfony Console 7.x
 - **HTTP:** cURL (raw PHP functions)
 - **Storage:** JSON files at `~/.pakuaos/`
-- **Entry point:** `bin/pakuaos`
+- **Entry point:** `pakuaos`
 
 ---
 
 ## Directory Structure
 
 ```
-bin/pakuaos                          # CLI entry point
+pakuaos                              # CLI entry point
 src/
 ├── Application/PakuaOS.php          # App boot & command registration
 ├── Commands/
@@ -51,7 +51,7 @@ src/
 
 ### Command Flow
 ```
-bin/pakuaos → PakuaOS::boot() → MenuCommand (default)
+pakuaos → PakuaOS::boot() → MenuCommand (default)
   ├── Operating Systems → handleOS() → OS providers → distro/version/arch picker → download
   ├── Download by URL   → handleDirectDownload() → Downloader
   ├── My Downloads      → handleHistory() → Database → Table
@@ -145,19 +145,19 @@ $choice = Menu::select('Title', [
 
 ```bash
 # Run interactive menu (default)
-./bin/pakuaos
+./pakuaos
 
 # Search for operating systems
-./bin/pakuaos search ubuntu
-./bin/pakuaos find windows
+./pakuaos search ubuntu
+./pakuaos find windows
 
 # Download by URL
-./bin/pakuaos download https://example.com/file.zip
-./bin/pakuaos dl https://example.com/file.zip
+./pakuaos download https://example.com/file.zip
+./pakuaos dl https://example.com/file.zip
 
 # View history
-./bin/pakuaos history
-./bin/pakuaos ls
+./pakuaos history
+./pakuaos ls
 ```
 
 ---

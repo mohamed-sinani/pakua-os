@@ -23,7 +23,7 @@
         }
     },
     "bin": [
-        "bin/pakuaos"
+        "pakuaos"
     ],
     "require": {
         "php": "^8.2",
