@@ -28,7 +28,7 @@ php composer-setup.php --install-dir=C:\bin --filename=composer
 **Step 4** — Install PakuaOS
 
 ```powershell
-composer global require pakuaos/pakua
+composer global require pakuaos/app
 ```
 
 **Step 5** — Run
@@ -60,7 +60,7 @@ sudo php composer-setup.php --install-dir=/usr/local/bin --filename=composer
 **Step 4** — Install PakuaOS
 
 ```bash
-composer global require pakuaos/pakua
+composer global require pakuaos/app
 ```
 
 **Step 5** — Run
@@ -92,7 +92,7 @@ sudo php composer-setup.php --install-dir=/usr/local/bin --filename=composer
 **Step 4** — Install PakuaOS
 
 ```bash
-composer global require pakuaos/pakua
+composer global require pakuaos/app
 ```
 
 **Step 5** — Run
