@@ -40,8 +40,6 @@ final class MenuCommand extends Command
         while (true) {
             $choice = Menu::select('What do you want?', [
                 ['label' => 'Operating Systems', 'desc' => 'Find ISOs — pick distro, version, arch'],
-                ['label' => 'Software Setup',    'desc' => 'Search ANY app — unlimited from web'],
-                ['label' => 'Search Everything', 'desc' => 'Search all sources at once'],
                 ['label' => 'Download by URL',   'desc' => 'Direct download from any URL'],
                 ['label' => 'My Downloads',      'desc' => 'View download history'],
                 ['label' => 'Settings',          'desc' => 'Configure PakuaOS'],
@@ -49,15 +47,13 @@ final class MenuCommand extends Command
 
             match ($choice) {
                 0 => $this->handleOS($engine),
-                1 => $this->handleSoftware($engine),
-                2 => $this->handleEverything($engine),
-                3 => $this->handleDirectDownload($dl),
-                4 => $this->handleHistory(),
-                5 => $this->handleSettings(),
+                1 => $this->handleDirectDownload($dl),
+                2 => $this->handleHistory(),
+                3 => $this->handleSettings(),
                 default => null,
             };
 
-            if ($choice === 5) break;
+            if ($choice === 3) break;
         }
 
         return Command::SUCCESS;
@@ -161,50 +157,6 @@ final class MenuCommand extends Command
         $this->showDetailsAndDownload($final, 'os');
     }
 
-    // ─── Software ───────────────────────────────────────────────────────
-
-    private function handleSoftware(SearchEngine $engine): void
-    {
-        $query = Menu::prompt('Search for any software');
-        if ($query === '') return;
-
-        echo "\n";
-
-        $spinner = new Spinner('Searching packages...');
-        $spinner->start();
-
-        $results = $engine->searchSoftware($query, function (string $p) use ($spinner) {
-            $spinner->updateMessage('Searching: ' . $p);
-        });
-
-        $spinner->stop('Found ' . count($results) . ' packages.');
-        echo "\n";
-
-        $this->displayResults($results, 'programs');
-    }
-
-    // ─── Search Everything ─────────────────────────────────────────────
-
-    private function handleEverything(SearchEngine $engine): void
-    {
-        $query = Menu::prompt('Search everything');
-        if ($query === '') return;
-
-        echo "\n";
-
-        $spinner = new Spinner('Searching all sources...');
-        $spinner->start();
-
-        $results = $engine->search($query, function (string $p) use ($spinner) {
-            $spinner->updateMessage('Searching: ' . $p);
-        });
-
-        $spinner->stop('Found ' . count($results) . ' results.');
-        echo "\n";
-
-        $this->displayResults($results, null);
-    }
-
     // ─── Direct Download ───────────────────────────────────────────────
 
     private function handleDirectDownload(Downloader $dl): void
@@ -213,8 +165,7 @@ final class MenuCommand extends Command
         if ($url === '') return;
         $name = Menu::prompt('Filename', basename(parse_url($url, PHP_URL_PATH) ?: 'download'));
 
-        $category = Menu::confirm('Save to Operating Systems folder?') ? 'os' : 'programs';
-        $dl->download($url, $name, null, 'sha256', $category);
+        $dl->download($url, $name, null, 'sha256', 'os');
     }
 
     // ─── History ───────────────────────────────────────────────────────
@@ -327,57 +278,6 @@ final class MenuCommand extends Command
         return preg_replace('/\s+\d.*/', '', $fullName) ?: $fullName;
     }
 
-    private function displayResults(array $results, ?string $downloadCategory): void
-    {
-        if (empty($results)) {
-            echo "\n  " . Theme::errorBox("Package not found.") . "\n";
-            echo "\n  " . Theme::dim("Suggestions:") . "\n";
-            echo "  " . Theme::dim("pakua search vscode") . "\n";
-            echo "  " . Theme::dim("pakua search code") . "\n";
-            echo "  " . Theme::dim("pakua search visual studio code") . "\n";
-            echo "\n";
-            return;
-        }
-
-        $total = count($results);
-        echo Theme::dim("  Found {$total} result(s)") . "\n\n";
-
-        // Show max 25 results
-        $shown = array_slice($results, 0, 25);
-
-        $rows = [];
-        foreach ($shown as $i => $r) {
-            $source = $r['provider'] ?? $r['source'] ?? '';
-            $stars = isset($r['stars']) ? " ★{$r['stars']}" : '';
-            $size = isset($r['asset_size']) ? ' ' . ProgressBar::formatBytes($r['asset_size']) : '';
-
-            $rows[] = [
-                Theme::cyan(str_pad((string)($i + 1), 3)),
-                Theme::bold(mb_substr($r['name'], 0, 28)),
-                $r['platform'],
-                $r['type'],
-                Theme::dim($source . $stars),
-            ];
-        }
-
-        Table::render(
-            ['#', 'Name', 'Platform', 'Type', 'Source'],
-            $rows,
-            [5, 30, 16, 16, 22]
-        );
-
-        if ($total > 25) {
-            echo Theme::dim("  ... and " . ($total - 25) . " more results") . "\n";
-        }
-
-        $choice = Menu::prompt("\n  Enter number to download (0 to go back)");
-        $idx = (int)$choice - 1;
-
-        if ($idx >= 0 && $idx < count($results)) {
-            $this->showDetailsAndDownload($results[$idx], $downloadCategory);
-        }
-    }
-
     private function showDetailsAndDownload(array $r, ?string $downloadCategory): void
     {
         echo "\n";
@@ -420,10 +320,8 @@ final class MenuCommand extends Command
             if (file_exists($partPath) || file_exists($filePath . '.part')) {
                 $orphans[] = $dl;
             } elseif (file_exists($filePath)) {
-                // .part was renamed but status wasn't updated — mark completed
                 $db->updateDownload($dl['id'], ['status' => 'completed']);
             } else {
-                // No file at all — mark failed
                 $db->updateDownload($dl['id'], ['status' => 'failed']);
             }
         }

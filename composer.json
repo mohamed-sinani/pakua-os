@@ -1,9 +1,9 @@
 {
-    "name": "pakuaos/pakua",
-    "description": "Universal OS and software setup manager CLI — Find. Verify. Install.",
+    "name": "pakuaos/app",
+    "description": "CLI tool for finding and downloading operating systems — Find. Verify. Install.",
     "type": "project",
     "license": "MIT",
-    "keywords": ["cli", "download", "operating-system", "software", "iso", "package-manager", "linux", "windows", "macos"],
+    "keywords": ["cli", "download", "operating-system", "iso", "linux", "windows", "macos"],
     "authors": [
         {
             "name": "Mohamed Sinani",

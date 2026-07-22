@@ -8,12 +8,6 @@ use PakuaOS\Search\Providers\Provider;
 use PakuaOS\Search\Providers\LinuxProvider;
 use PakuaOS\Search\Providers\WindowsProvider;
 use PakuaOS\Search\Providers\MacOSProvider;
-use PakuaOS\Search\Providers\SoftwareProvider;
-use PakuaOS\Search\Providers\GitHubProvider;
-use PakuaOS\Search\Providers\ChocolateyProvider;
-use PakuaOS\Search\Providers\WingetProvider;
-use PakuaOS\Search\Providers\SnapProvider;
-use PakuaOS\Search\Providers\WebSearchProvider;
 
 final class SearchEngine
 {
@@ -22,17 +16,9 @@ final class SearchEngine
 
     public function __construct()
     {
-        // Offline / curated
         $this->providers[] = new LinuxProvider();
         $this->providers[] = new WindowsProvider();
         $this->providers[] = new MacOSProvider();
-        $this->providers[] = new SoftwareProvider();
-
-        // Live API providers
-        $this->providers[] = new GitHubProvider();
-        $this->providers[] = new ChocolateyProvider();
-        $this->providers[] = new SnapProvider();
-        $this->providers[] = new WebSearchProvider();
     }
 
     public function search(string $query, ?callable $onProgress = null): array
@@ -47,7 +33,6 @@ final class SearchEngine
             $all = array_merge($all, $results);
         }
 
-        // Deduplicate by name+version+platform
         return $this->deduplicate($all);
     }
 
@@ -57,37 +42,6 @@ final class SearchEngine
         foreach ($this->providers as $provider) {
             if (!$provider->isAvailable()) continue;
             if ($provider->getCategory() !== $category) continue;
-            if ($onProgress) {
-                $onProgress($provider->getName());
-            }
-            $results = $provider->search($query);
-            $all = array_merge($all, $results);
-        }
-        return $this->deduplicate($all);
-    }
-
-    public function searchSoftware(string $query, ?callable $onProgress = null): array
-    {
-        $all = [];
-        foreach ($this->providers as $provider) {
-            if (!$provider->isAvailable()) continue;
-            if ($provider->getCategory() !== 'software') continue;
-            if ($onProgress) {
-                $onProgress($provider->getName());
-            }
-            $results = $provider->search($query);
-            $all = array_merge($all, $results);
-        }
-        return $this->deduplicate($all);
-    }
-
-    public function searchOnline(string $query, ?callable $onProgress = null): array
-    {
-        $all = [];
-        foreach ($this->providers as $provider) {
-            if (!$provider->isAvailable()) continue;
-            $class = (new \ReflectionClass($provider))->getShortName();
-            if (in_array($class, ['LinuxProvider', 'WindowsProvider', 'MacOSProvider', 'SoftwareProvider'])) continue;
             if ($onProgress) {
                 $onProgress($provider->getName());
             }
