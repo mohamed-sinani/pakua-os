@@ -35,9 +35,8 @@ final class Downloader
     private function resolveDir(?string $category): string
     {
         $dir = match ($category) {
-            'os'       => $this->baseDir . '/Operating Systems',
-            'programs' => $this->baseDir . '/Programs',
-            default    => $this->baseDir,
+            'os'    => $this->baseDir . '/Operating Systems',
+            default => $this->baseDir,
         };
 
         if (!is_dir($dir)) mkdir($dir, 0755, true);

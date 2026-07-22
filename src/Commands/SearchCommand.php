@@ -21,7 +21,7 @@ final class SearchCommand extends Command
     {
         $this
             ->setName('search')
-            ->setDescription('Search for operating systems or software')
+            ->setDescription('Search for operating systems')
             ->setAliases(['find', 's'])
             ->addArgument('query', InputArgument::OPTIONAL, 'Search query');
     }
@@ -33,7 +33,7 @@ final class SearchCommand extends Command
         echo "\n";
         echo Theme::header('SEARCH') . "\n\n";
 
-        $spinner = new Spinner('Searching packages...');
+        $spinner = new Spinner('Searching operating systems...');
         $spinner->start();
 
         $providersQueried = [];
@@ -43,16 +43,16 @@ final class SearchCommand extends Command
             $spinner->updateMessage('Searching: ' . $provider);
         });
 
-        $spinner->stop('Found ' . count($results) . ' matching packages.');
+        $spinner->stop('Found ' . count($results) . ' matching operating systems.');
 
         if (empty($results)) {
             echo "\n";
-            echo "  " . Theme::errorBox("Package not found.") . "\n";
+            echo "  " . Theme::errorBox("No operating systems found.") . "\n";
             echo "\n";
             echo "  " . Theme::dim("Suggestions:") . "\n";
-            echo "  " . Theme::dim("pakua search vscode") . "\n";
-            echo "  " . Theme::dim("pakua search code") . "\n";
-            echo "  " . Theme::dim("pakua search visual studio code") . "\n";
+            echo "  " . Theme::dim("pakuaos search ubuntu") . "\n";
+            echo "  " . Theme::dim("pakuaos search windows") . "\n";
+            echo "  " . Theme::dim("pakuaos search fedora") . "\n";
             echo "\n";
             return Command::SUCCESS;
         }
@@ -101,10 +101,8 @@ final class SearchCommand extends Command
             echo "\n";
 
             if (Menu::confirm("Start download?")) {
-                $cat = $r['category'] ?? null;
-                $dlCategory = in_array($cat, ['linux', 'windows', 'macos']) ? 'os' : 'programs';
                 $dl = new \PakuaOS\Downloader\Downloader();
-                $dl->download($r['url'], $r['name'] . ' ' . $r['platform'], null, 'sha256', $dlCategory);
+                $dl->download($r['url'], $r['name'] . ' ' . $r['platform'], null, 'sha256', 'os');
             }
         }
 
