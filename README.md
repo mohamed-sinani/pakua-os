@@ -35,7 +35,7 @@ cd app
 **Step 5** — Run
 
 ```powershell
-php pakuaos
+vendor/bin/pakuaos
 ```
 
 ---
@@ -68,7 +68,7 @@ cd app
 **Step 5** — Run
 
 ```bash
-php pakuaos
+vendor/bin/pakuaos
 ```
 
 ---
@@ -101,7 +101,7 @@ cd app
 **Step 5** — Run
 
 ```bash
-php pakuaos
+vendor/bin/pakuaos
 ```
 
 ---
