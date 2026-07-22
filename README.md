@@ -2,47 +2,109 @@
 
 > **Find. Verify. Download Operating Systems.**
 
-PakuaOS is a CLI tool for finding and downloading operating systems. It pulls from official sources — Ubuntu mirrors, Microsoft servers, Kali, Fedora, and more. Includes fallback URLs for reliability.
+PakuaOS is a CLI tool for downloading operating systems (Ubuntu, Windows, Kali, Fedora, etc.) from official sources with live progress and resume support.
 
+---
+
+## How to Install
+
+### Windows
+
+**Step 1** — Open **PowerShell** (right-click Start → Terminal)
+
+**Step 2** — Install PHP
+
+```powershell
+winget install PHP.PHP
 ```
-    ███████╗  ██████╗ ███████╗
-    ██╔════╝ ██╔═══██╗██╔════╝
-    ███████╗ ██║   ██║███████╗
-    ╚════██║ ██║   ██║╚════██║
-    ███████║ ╚██████╔╝███████║
-    ╚══════╝  ╚═════╝ ╚══════╝
 
-       Operating System Downloader
-         Find • Verify • Download
+**Step 3** — Install Composer
+
+```powershell
+php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+php composer-setup.php --install-dir=C:\bin --filename=composer
+```
+
+**Step 4** — Install PakuaOS
+
+```powershell
+composer create-project pakuaos/app
+cd app
+```
+
+**Step 5** — Run
+
+```powershell
+php pakuaos
 ```
 
 ---
 
-## Install
+### Linux (Ubuntu/Debian)
 
-### Step 1 — Install PHP 8.2+
+**Step 1** — Open **Terminal**
+
+**Step 2** — Install PHP
 
 ```bash
-# Check version
-php -v
-
-# Ubuntu/Debian
-sudo apt install php8.2-cli php8.2-curl php8.2-mbstring
-
-# macOS
-brew install php
+sudo apt update
+sudo apt install php-cli php-curl php-mbstring
 ```
 
-### Step 2 — Install PakuaOS
+**Step 3** — Install Composer
+
+```bash
+php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+sudo php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+```
+
+**Step 4** — Install PakuaOS
 
 ```bash
 composer create-project pakuaos/app
+cd app
 ```
 
-### Step 3 — Run
+**Step 5** — Run
 
 ```bash
+php pakuaos
+```
+
+---
+
+### macOS
+
+**Step 1** — Open **Terminal** (Spotlight → type "Terminal")
+
+**Step 2** — Install PHP
+
+```bash
+brew install php
+```
+
+*Don't have Homebrew? Install it first:*
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+**Step 3** — Install Composer
+
+```bash
+php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+sudo php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+```
+
+**Step 4** — Install PakuaOS
+
+```bash
+composer create-project pakuaos/app
 cd app
+```
+
+**Step 5** — Run
+
+```bash
 php pakuaos
 ```
 
@@ -50,18 +112,18 @@ php pakuaos
 
 ## How to Use
 
-### Browse & Download an OS
+### Download an Operating System
 
 ```
-1. Select "Operating Systems"
+1. Type 1 → Operating Systems
 2. Pick a family: Linux / Windows / macOS
-3. Pick a distro: Ubuntu / Debian / Fedora / Arch / Kali / Mint / openSUSE
+3. Pick a distro: Ubuntu / Debian / Kali / Fedora / Windows 11 ...
 4. Pick a version
 5. Pick architecture: amd64 / arm64
-6. Confirm download
+6. Type y → download starts
 ```
 
-Live progress bar shows percentage, speed, and ETA:
+You'll see a live progress bar:
 
 ```
   [████████████████████░░░░░░░░░░░░░░░░░░░░] 45%  2.1 GB / 4.7 GB  12.3 MB/s  ETA 3m 12s
@@ -70,76 +132,48 @@ Live progress bar shows percentage, speed, and ETA:
 ### Download by URL
 
 ```
-1. Select "Download by URL"
-2. Paste any download link
-3. Enter a filename
+1. Type 2 → Download by URL
+2. Paste the download link
+3. Type a filename
 4. Download starts
 ```
 
 ### View History
 
 ```
-1. Select "My Downloads"
-2. See all past downloads with status and size
+1. Type 3 → My Downloads
+2. See all past downloads with status
 3. Resume interrupted downloads
 ```
 
-### Navigate
+### Go Back
 
-- Type a number to select
-- Type `0` to go back to the previous step
+At any step, type `0` to go back to the previous menu.
 
 ---
 
 ## Supported Systems
 
-| Family | Distros |
-|--------|---------|
-| **Linux** | Ubuntu 24.04 / 22.04, Debian 12, Fedora 42 / 41, Arch Linux, Kali 2025.4, Linux Mint 22.1, openSUSE Leap 15.6 |
-| **Windows** | Windows 11 25H2, Windows 11 23H2, Windows 10 22H2, Server 2022 |
-| **macOS** | Sequoia 15, Sonoma 14, Ventura 13 |
+| Linux | Windows | macOS |
+|-------|---------|-------|
+| Ubuntu 24.04 / 22.04 | Windows 11 25H2 | Sequoia 15 |
+| Debian 12 | Windows 11 23H2 | Sonoma 14 |
+| Fedora 42 / 41 | Windows 10 22H2 | Ventura 13 |
+| Arch Linux | Server 2022 | |
+| Kali 2025.4 | | |
+| Linux Mint 22.1 | | |
+| openSUSE Leap 15.6 | | |
 
 ---
 
 ## Features
 
-- **Official sources only** — Downloads from official mirrors and publisher sites
-- **Fallback URLs** — Automatically tries backup sources if primary fails
-- **Live progress** — Real-time percentage, speed, and ETA
-- **Resume support** — Interrupted downloads resume from where they stopped
-- **SHA256 verification** — Hash checking for supported downloads
-- **Download history** — All downloads tracked locally
-
----
-
-## CLI Commands
-
-| Command | What it does |
-|---------|--------------|
-| `php pakuaos` | Launch interactive menu |
-| `php pakuaos search ubuntu` | Search for an OS |
-| `php pakuaos download <url>` | Download from a URL |
-| `php pakuaos history` | View past downloads |
-
----
-
-## Where Files Are Saved
-
-```
-~/Downloads/PakuaOS/
-└── Operating Systems/
-    ├── ubuntu-24.04.2-desktop-amd64.iso
-    ├── kali-linux-2025.4-installer-amd64.iso
-    └── ...
-```
-
----
-
-## Requirements
-
-- PHP 8.2+
-- Extensions: `curl`, `json`, `mbstring`
-- Internet connection
+- Official mirrors and sources only
+- Fallback URLs if primary source fails
+- Live progress with speed and ETA
+- Resume interrupted downloads
+- SHA256 hash verification
+- Download history tracking
 
 ---
 
