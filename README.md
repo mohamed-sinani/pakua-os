@@ -28,7 +28,7 @@ php composer-setup.php --install-dir=C:\bin --filename=composer
 **Step 4** — Install PakuaOS
 
 ```powershell
-composer create-project pakuaos/pakua
+composer require pakuaos/pakua
 cd app
 ```
 
@@ -61,7 +61,7 @@ sudo php composer-setup.php --install-dir=/usr/local/bin --filename=composer
 **Step 4** — Install PakuaOS
 
 ```bash
-composer create-project pakuaos/pakua
+composer require pakuaos/pakua
 cd app
 ```
 
@@ -94,7 +94,7 @@ sudo php composer-setup.php --install-dir=/usr/local/bin --filename=composer
 **Step 4** — Install PakuaOS
 
 ```bash
-composer create-project pakuaos/pakua
+composer require pakuaos/pakua
 cd app
 ```
 
