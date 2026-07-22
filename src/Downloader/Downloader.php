@@ -170,6 +170,7 @@ final class Downloader
             CURLOPT_CONNECTTIMEOUT => 30,
             CURLOPT_TIMEOUT        => 0,
             CURLOPT_RESUME_FROM    => $startByte,
+            CURLOPT_BUFFERSIZE     => 65536,
         ]);
 
         $fp = fopen($filePath . '.part', $startByte > 0 ? 'ab' : 'wb');
@@ -177,24 +178,40 @@ final class Downloader
         $bar = new ProgressBar($totalSize > 0 ? $totalSize : 1);
         if ($startByte > 0) $bar->set($startByte);
 
+        while (ob_get_level()) ob_end_flush();
         ob_implicit_flush(true);
-        if (ob_get_level()) ob_end_flush();
+        stream_set_write_buffer(STDOUT, 0);
 
-        $lastTime = microtime(true);
+        $lastDraw = 0;
 
         curl_setopt($ch, CURLOPT_PROGRESSFUNCTION, function (
             $resource, $dlNow, $dlTotal, $ulNow, $ulTotal
-        ) use ($bar, &$lastTime, $startByte) {
-            $now = microtime(true);
-            if ($now - $lastTime >= 0.1) {
-                $lastTime = $now;
-                $bar->set((int)($startByte + $dlNow));
-                flush();
+        ) use ($bar, &$lastDraw, $startByte) {
+            if ($dlTotal > 0 && $dlNow > 0) {
+                $now = microtime(true);
+                if ($now - $lastDraw >= 0.05) {
+                    $lastDraw = $now;
+                    $bar->set((int)($startByte + $dlNow));
+                    fflush(STDOUT);
+                }
             }
             return 0;
         });
 
-        curl_setopt($ch, CURLOPT_FILE, $fp);
+        curl_setopt($ch, CURLOPT_WRITEFUNCTION, function ($ch, $data) use ($fp, $bar, &$lastDraw, $startByte) {
+            fwrite($fp, $data);
+            $dlNow = (int)curl_getinfo($ch, CURLINFO_SIZE_DOWNLOAD);
+            $dlTotal = (int)curl_getinfo($ch, CURLINFO_CONTENT_LENGTH_DOWNLOAD);
+            if ($dlTotal > 0) {
+                $now = microtime(true);
+                if ($now - $lastDraw >= 0.05) {
+                    $lastDraw = $now;
+                    $bar->set((int)($startByte + $dlNow));
+                    fflush(STDOUT);
+                }
+            }
+            return strlen($data);
+        });
 
         echo "\n";
         flush();
