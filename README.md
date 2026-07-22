@@ -6,7 +6,7 @@ PakuaOS is a CLI tool for downloading operating systems (Ubuntu, Windows, Kali, 
 
 ---
 
-## How to Install
+## How to Install 
 
 ### Windows
 
