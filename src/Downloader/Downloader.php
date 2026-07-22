@@ -164,7 +164,7 @@ final class Downloader
             CURLOPT_USERAGENT      => 'PakuaOS/1.0',
             CURLOPT_BINARYTRANSFER => true,
             CURLOPT_RETURNTRANSFER => false,
-            CURLOPT_NOPROGRESS     => false,
+            CURLOPT_NOPROGRESS     => true,
             CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_SSL_VERIFYHOST => 2,
             CURLOPT_CONNECTTIMEOUT => 30,
@@ -174,43 +174,53 @@ final class Downloader
         ]);
 
         $fp = fopen($filePath . '.part', $startByte > 0 ? 'ab' : 'wb');
-
-        $bar = new ProgressBar($totalSize > 0 ? $totalSize : 1);
-        if ($startByte > 0) $bar->set($startByte);
+        $totalSize = max($totalSize, 1);
 
         while (ob_get_level()) ob_end_flush();
         ob_implicit_flush(true);
         stream_set_write_buffer(STDOUT, 0);
+        stream_set_write_buffer(STDERR, 0);
 
+        $downloaded = $startByte;
         $lastDraw = 0;
+        $dlStartTime = microtime(true);
 
-        curl_setopt($ch, CURLOPT_PROGRESSFUNCTION, function (
-            $resource, $dlNow, $dlTotal, $ulNow, $ulTotal
-        ) use ($bar, &$lastDraw, $startByte) {
-            if ($dlTotal > 0 && $dlNow > 0) {
-                $now = microtime(true);
-                if ($now - $lastDraw >= 0.05) {
-                    $lastDraw = $now;
-                    $bar->set((int)($startByte + $dlNow));
-                    fflush(STDOUT);
-                }
-            }
-            return 0;
-        });
-
-        curl_setopt($ch, CURLOPT_WRITEFUNCTION, function ($ch, $data) use ($fp, $bar, &$lastDraw, $startByte) {
+        curl_setopt($ch, CURLOPT_WRITEFUNCTION, function ($ch, $data) use ($fp, $totalSize, $startByte, &$downloaded, &$lastDraw, $dlStartTime) {
+            $len = strlen($data);
             fwrite($fp, $data);
-            $dlNow = (int)curl_getinfo($ch, CURLINFO_SIZE_DOWNLOAD);
-            $dlTotal = (int)curl_getinfo($ch, CURLINFO_CONTENT_LENGTH_DOWNLOAD);
-            if ($dlTotal > 0) {
-                $now = microtime(true);
-                if ($now - $lastDraw >= 0.05) {
-                    $lastDraw = $now;
-                    $bar->set((int)($startByte + $dlNow));
-                    fflush(STDOUT);
+            $downloaded += $len;
+
+            $now = microtime(true);
+            if ($now - $lastDraw >= 0.15 || $downloaded >= $totalSize) {
+                $lastDraw = $now;
+                $elapsed = $now - $dlStartTime;
+                $bytesThisSession = $downloaded - $startByte;
+                $speed = $elapsed > 0.5 ? $bytesThisSession / $elapsed : 0;
+
+                $pct = min(($downloaded / $totalSize) * 100, 100);
+                $filled = (int)round(($pct / 100) * 36);
+                $empty = 36 - $filled;
+
+                $bar = str_repeat('█', $filled) . str_repeat('░', $empty);
+                $pctStr = str_pad(number_format($pct, 0) . '%', 5);
+
+                $line = '[' . $bar . '] ' . $pctStr;
+                $line .= ' ' . ProgressBar::formatBytes($downloaded) . '/' . ProgressBar::formatBytes($totalSize);
+
+                if ($speed > 0 && $downloaded < $totalSize) {
+                    $line .= ' ' . ProgressBar::formatBytes((int)$speed) . '/s';
+                    $remaining = $totalSize - $downloaded;
+                    $sec = (int)ceil($remaining / $speed);
+                    $line .= ' ETA ' . ProgressBar::formatTime($sec);
+                } elseif ($downloaded >= $totalSize) {
+                    $line .= ' Done';
                 }
+
+                fprintf(STDOUT, "\r  %-78s", mb_substr($line, 0, 78));
+                fflush(STDOUT);
             }
-            return strlen($data);
+
+            return $len;
         });
 
         echo "\n";
@@ -221,6 +231,8 @@ final class Downloader
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
         fclose($fp);
+
+        echo "\n";
 
         if (!$success || ($httpCode >= 400 && $httpCode !== 206 && $httpCode !== 0)) {
             echo "\n\n";
