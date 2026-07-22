@@ -125,6 +125,14 @@ pakuaos
 
 ---
 
+## How to Uninstall
+
+```bash
+composer global remove pakuaos/app
+```
+
+---
+
 ## How to Use
 
 ### Download an Operating System
