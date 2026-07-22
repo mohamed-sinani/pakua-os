@@ -1,7 +1,7 @@
 {
     "name": "pakuaos/pakua",
     "description": "CLI tool for finding and downloading operating systems — Find. Verify. Install.",
-    "type": "project",
+    "type": "library",
     "license": "MIT",
     "keywords": ["cli", "download", "operating-system", "iso", "linux", "windows", "macos"],
     "authors": [
