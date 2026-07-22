@@ -59,7 +59,7 @@ final class Theme
         echo "  " . $cyan(str_repeat('═', $w)) . "\n";
         echo "  " . $cyan('═') . str_repeat(' ', $w - 2) . $cyan('═') . "\n";
         echo "  " . $cyan('═') . str_repeat(' ', 26) . $bold($white('PakuaOS v1.0')) . str_repeat(' ', 26) . $cyan('═') . "\n";
-        echo "  " . $cyan('═') . str_repeat(' ', 16) . $dim('Software & Operating System Hub') . str_repeat(' ', 16) . $cyan('═') . "\n";
+        echo "  " . $cyan('═') . str_repeat(' ', 21) . $dim('Operating System Hub') . str_repeat(' ', 21) . $cyan('═') . "\n";
         echo "  " . $cyan('═') . str_repeat(' ', 20) . $green('Find') . ' ' . $dim('•') . ' ' . $green('Verify') . ' ' . $dim('•') . ' ' . $green('Download') . ' ' . $dim('Safely') . str_repeat(' ', 18) . $cyan('═') . "\n";
         echo "  " . $cyan('═') . str_repeat(' ', $w - 2) . $cyan('═') . "\n";
         echo "  " . $cyan(str_repeat('═', $w)) . "\n";
@@ -81,7 +81,7 @@ final class Theme
             echo '  ' . $cyan($line) . "\n";
         }
         echo "\n";
-        echo '  ' . str_repeat(' ', 20) . $dim('Software & Operating System Hub') . "\n";
+        echo '  ' . str_repeat(' ', 20) . $dim('Operating System Hub') . "\n";
         echo '  ' . str_repeat(' ', 26) . $green('Find') . ' ' . $dim('•') . ' ' . $green('Verify') . ' ' . $dim('•') . ' ' . $green('Download') . "\n";
         echo '  ' . str_repeat(' ', 26) . $dim('Powered by ') . $cyan('dev_meddy') . "\n";
         echo "\n";
