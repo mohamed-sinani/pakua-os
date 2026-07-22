@@ -31,7 +31,15 @@ php composer-setup.php --install-dir=C:\bin --filename=composer
 composer global require pakuaos/app
 ```
 
-**Step 5** — Run
+**Step 5** — Add to PATH
+
+```powershell
+[Environment]::SetEnvironmentVariable("Path", $env:Path + ";C:\Users\$env:USERNAME\AppData\Roaming\Composer\vendor\bin", "User")
+```
+
+Close and reopen PowerShell, then:
+
+**Step 6** — Run
 
 ```powershell
 pakuaos
@@ -63,7 +71,14 @@ sudo php composer-setup.php --install-dir=/usr/local/bin --filename=composer
 composer global require pakuaos/app
 ```
 
-**Step 5** — Run
+**Step 5** — Add to PATH
+
+```bash
+echo 'export PATH="$HOME/.config/composer/vendor/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+**Step 6** — Run
 
 ```bash
 pakuaos
@@ -95,7 +110,14 @@ sudo php composer-setup.php --install-dir=/usr/local/bin --filename=composer
 composer global require pakuaos/app
 ```
 
-**Step 5** — Run
+**Step 5** — Add to PATH
+
+```bash
+echo 'export PATH="$HOME/.composer/vendor/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+**Step 6** — Run
 
 ```bash
 pakuaos
