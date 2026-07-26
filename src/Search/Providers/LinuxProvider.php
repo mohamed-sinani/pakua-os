@@ -13,14 +13,13 @@ final class LinuxProvider implements Provider
                 '24.04.4 LTS "Noble Numbat"' => [
                     'architectures' => ['amd64', 'arm64', 'armhf'],
                     'types' => ['Desktop', 'Server', 'Minimal'],
-                    'url_pattern' => 'https://releases.ubuntu.com/24.04.2/ubuntu-24.04.2-desktop-amd64.iso',
+                    'url_pattern' => 'https://releases.ubuntu.com/24.04/ubuntu-24.04.4-desktop-amd64.iso',
                     'source' => 'Official Ubuntu',
                     'verified' => true,
                     'fallback_urls' => [
-                        'https://mirror.math.princeton.edu/pub/ubuntu-releases/24.04.2/ubuntu-24.04.2-desktop-amd64.iso',
-                        'https://mirror.cs.uchicago.edu/ubuntu-releases/24.04.2/ubuntu-24.04.2-desktop-amd64.iso',
-                        'https://mirrors.mit.edu/ubuntu-releases/24.04.2/ubuntu-24.04.2-desktop-amd64.iso',
-                        'https://archive.org/download/ubuntu-24.04.2-desktop-amd64/ubuntu-24.04.2-desktop-amd64.iso',
+                        'https://mirror.math.princeton.edu/pub/ubuntu-releases/24.04/ubuntu-24.04.4-desktop-amd64.iso',
+                        'https://mirror.cs.uchicago.edu/ubuntu-releases/24.04/ubuntu-24.04.4-desktop-amd64.iso',
+                        'https://mirrors.mit.edu/ubuntu-releases/24.04/ubuntu-24.04.4-desktop-amd64.iso',
                     ],
                 ],
                 '22.04.5 LTS "Jammy Jellyfish"' => [
