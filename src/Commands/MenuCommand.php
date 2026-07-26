@@ -43,17 +43,19 @@ final class MenuCommand extends Command
                 ['label' => 'Download by URL',   'desc' => 'Direct download from any URL'],
                 ['label' => 'My Downloads',      'desc' => 'View download history'],
                 ['label' => 'Settings',          'desc' => 'Configure PakuaOS'],
+                ['label' => 'Exit',              'desc' => 'Quit PakuaOS'],
             ], false);
+
+            if ($choice === null) break;
 
             match ($choice) {
                 0 => $this->handleOS($engine),
                 1 => $this->handleDirectDownload($dl),
                 2 => $this->handleHistory(),
                 3 => $this->handleSettings(),
+                4 => break,
                 default => null,
             };
-
-            if ($choice === 3) break;
         }
 
         return Command::SUCCESS;
