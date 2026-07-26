@@ -261,24 +261,20 @@ final class MenuCommand extends Command
             ['label' => 'View stats',             'desc' => 'Total downloads, size, etc.'],
         ], true);
 
-        match ($choice) {
-            0 => function () use ($db) {
-                $dir = Menu::prompt('Download directory', $db->setting('download_dir', '~/Downloads'));
-                $db->setSetting('download_dir', $dir);
-                echo "\n" . Theme::successBox("Download directory set to: {$dir}") . "\n\n";
-            },
-            1 => function () use ($db) {
-                $completed = $db->getDownloadsByStatus('completed');
-                $count = count($completed);
-                $totalSize = 0;
-                foreach ($completed as $d) $totalSize += (int)($d['file_size'] ?? 0);
-                echo "\n";
-                echo Theme::separator("Stats") . "\n";
-                echo "  " . Theme::bold('Total downloads') . ': ' . Theme::cyan((string)$count) . "\n";
-                echo "  " . Theme::bold('Total size') . ':      ' . Theme::cyan(ProgressBar::formatBytes($totalSize)) . "\n\n";
-            },
-            null => null,
-        }() ?? null;
+        if ($choice === 0) {
+            $dir = Menu::prompt('Download directory', $db->setting('download_dir', '~/Downloads'));
+            $db->setSetting('download_dir', $dir);
+            echo "\n" . Theme::successBox("Download directory set to: {$dir}") . "\n\n";
+        } elseif ($choice === 1) {
+            $completed = $db->getDownloadsByStatus('completed');
+            $count = count($completed);
+            $totalSize = 0;
+            foreach ($completed as $d) $totalSize += (int)($d['file_size'] ?? 0);
+            echo "\n";
+            echo Theme::separator("Stats") . "\n";
+            echo "  " . Theme::bold('Total downloads') . ': ' . Theme::cyan((string)$count) . "\n";
+            echo "  " . Theme::bold('Total size') . ':      ' . Theme::cyan(ProgressBar::formatBytes($totalSize)) . "\n\n";
+        }
     }
 
     // ─── Architecture Detection ─────────────────────────────────────────
