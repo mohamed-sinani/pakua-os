@@ -278,7 +278,7 @@ final class MenuCommand extends Command
                 echo "  " . Theme::bold('Total size') . ':      ' . Theme::cyan(ProgressBar::formatBytes($totalSize)) . "\n\n";
             },
             null => null,
-        };
+        }();
     }
 
     // ─── Architecture Detection ─────────────────────────────────────────
