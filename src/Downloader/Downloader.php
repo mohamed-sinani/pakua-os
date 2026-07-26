@@ -250,6 +250,7 @@ final class Downloader
         fprintf(STDOUT, "\r  [████████████████████████████████████████] 100%% Done\n");
         flush();
 
+        $verified = false;
         if ($this->expectedHash) {
             echo Theme::separator("Verification") . "\n";
             $verified = HashVerifier::verify($filePath, $this->expectedHash, $this->hashAlgo);
@@ -264,7 +265,13 @@ final class Downloader
 
         $size = filesize($filePath);
         echo Theme::successBox("Download complete.") . "\n";
-        echo Theme::successBox("File verified.") . "\n";
+        if (!empty($this->expectedHash)) {
+            if ($verified) {
+                echo Theme::successBox("File verified.") . "\n";
+            } else {
+                echo Theme::warningBox("File NOT verified — checksum mismatch.") . "\n";
+            }
+        }
         echo Theme::successBox("Ready to install.") . "\n";
         echo "\n";
         echo "  " . Theme::bold(Theme::green("Saved to:")) . "\n\n";
