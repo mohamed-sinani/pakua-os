@@ -53,7 +53,6 @@ final class Theme
         $bold = fn(string $t) => self::bold($t);
 
         $w = 78;
-        $line = fn() => $cyan(str_repeat('═', $w));
 
         echo "\n";
         echo "  " . $cyan(str_repeat('═', $w)) . "\n";
