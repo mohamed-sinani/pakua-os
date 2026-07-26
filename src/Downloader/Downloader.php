@@ -315,12 +315,3 @@ final class Downloader
         return mb_substr($name, 0, 120);
     }
 }
-
-function Menu_confirm(string $question): bool
-{
-    $handle = fopen('php://stdin', 'r');
-    echo "\n  " . Theme::yellow($question) . ' [Y/n] ';
-    $input = strtolower(trim(fgets($handle)));
-    fclose($handle);
-    return $input !== 'n' && $input !== 'no';
-}
