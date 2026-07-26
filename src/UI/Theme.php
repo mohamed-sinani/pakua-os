@@ -81,8 +81,6 @@ final class Theme
             echo '  ' . $cyan($line) . "\n";
         }
         echo "\n";
-        echo '  ' . str_repeat(' ', 20) . $dim('Operating System Hub') . "\n";
-        echo '  ' . str_repeat(' ', 26) . $green('Find') . ' ' . $dim('•') . ' ' . $green('Verify') . ' ' . $dim('•') . ' ' . $green('Download') . "\n";
         echo '  ' . str_repeat(' ', 26) . $cyan('Open source Operating system Downloader') . "\n";
         echo "\n";
 
