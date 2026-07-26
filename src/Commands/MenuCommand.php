@@ -46,14 +46,13 @@ final class MenuCommand extends Command
                 ['label' => 'Exit',              'desc' => 'Quit PakuaOS'],
             ], false);
 
-            if ($choice === null) break;
+            if ($choice === null || $choice === 4) break;
 
             match ($choice) {
                 0 => $this->handleOS($engine),
                 1 => $this->handleDirectDownload($dl),
                 2 => $this->handleHistory(),
                 3 => $this->handleSettings(),
-                4 => break,
                 default => null,
             };
         }
