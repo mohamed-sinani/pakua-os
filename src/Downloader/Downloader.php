@@ -260,7 +260,7 @@ final class Downloader
             $verified = HashVerifier::verify($filePath, $this->expectedHash, $this->hashAlgo);
             if ($verified) {
                 echo "  " . Theme::success("✔ Integrity verified.") . "\n";
-                echo "  " . Theme::success("✔ Publisher signature verified.") . "\n\n";
+                echo "  " . Theme::success("✔ Checksum matches expected value.") . "\n\n";
             } else {
                 echo "  " . Theme::warning("⚠ Checksum could not be verified") . "\n";
                 echo "  " . Theme::dim("No local reference checksum available for comparison") . "\n\n";
