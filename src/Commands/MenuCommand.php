@@ -222,7 +222,7 @@ final class MenuCommand extends Command
         }
 
         Table::render(
-            ['#', 'Package', 'Status', 'Size'],
+            ['#', 'File', 'Status', 'Size'],
             $rows,
             [5, 34, 14, 12]
         );
