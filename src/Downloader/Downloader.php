@@ -174,7 +174,7 @@ final class Downloader
         ]);
 
         $fp = fopen($filePath, $startByte > 0 ? 'ab' : 'wb');
-        $totalSize = max($totalSize, 1);
+        $unknownSize = ($totalSize <= 0);
 
         while (ob_get_level()) ob_end_flush();
         ob_implicit_flush(true);
@@ -185,35 +185,39 @@ final class Downloader
         $lastDraw = 0;
         $dlStartTime = microtime(true);
 
-        curl_setopt($ch, CURLOPT_WRITEFUNCTION, function ($ch, $data) use ($fp, $totalSize, $startByte, &$downloaded, &$lastDraw, $dlStartTime) {
+        curl_setopt($ch, CURLOPT_WRITEFUNCTION, function ($ch, $data) use ($fp, $totalSize, $unknownSize, $startByte, &$downloaded, &$lastDraw, $dlStartTime) {
             $len = strlen($data);
             fwrite($fp, $data);
             $downloaded += $len;
 
             $now = microtime(true);
-            if ($now - $lastDraw >= 0.15 || $downloaded >= $totalSize) {
+            if ($now - $lastDraw >= 0.15 || (!$unknownSize && $downloaded >= $totalSize)) {
                 $lastDraw = $now;
                 $elapsed = $now - $dlStartTime;
                 $bytesThisSession = $downloaded - $startByte;
                 $speed = $elapsed > 0.5 ? $bytesThisSession / $elapsed : 0;
 
-                $pct = min(($downloaded / $totalSize) * 100, 100);
-                $filled = (int)round(($pct / 100) * 36);
-                $empty = 36 - $filled;
+                if ($unknownSize) {
+                    $line = ProgressBar::formatBytes($downloaded) . ' downloaded';
+                } else {
+                    $pct = min(($downloaded / $totalSize) * 100, 100);
+                    $filled = (int)round(($pct / 100) * 36);
+                    $empty = 36 - $filled;
 
-                $bar = str_repeat('█', $filled) . str_repeat('░', $empty);
-                $pctStr = str_pad(number_format($pct, 0) . '%', 5);
+                    $bar = str_repeat('█', $filled) . str_repeat('░', $empty);
+                    $pctStr = str_pad(number_format($pct, 0) . '%', 5);
 
-                $line = '[' . $bar . '] ' . $pctStr;
-                $line .= ' ' . ProgressBar::formatBytes($downloaded) . '/' . ProgressBar::formatBytes($totalSize);
+                    $line = '[' . $bar . '] ' . $pctStr;
+                    $line .= ' ' . ProgressBar::formatBytes($downloaded) . '/' . ProgressBar::formatBytes($totalSize);
 
-                if ($speed > 0 && $downloaded < $totalSize) {
-                    $line .= ' ' . ProgressBar::formatBytes((int)$speed) . '/s';
-                    $remaining = $totalSize - $downloaded;
-                    $sec = (int)ceil($remaining / $speed);
-                    $line .= ' ETA ' . ProgressBar::formatTime($sec);
-                } elseif ($downloaded >= $totalSize) {
-                    $line .= ' Done';
+                    if ($speed > 0 && $downloaded < $totalSize) {
+                        $line .= ' ' . ProgressBar::formatBytes((int)$speed) . '/s';
+                        $remaining = $totalSize - $downloaded;
+                        $sec = (int)ceil($remaining / $speed);
+                        $line .= ' ETA ' . ProgressBar::formatTime($sec);
+                    } elseif ($downloaded >= $totalSize) {
+                        $line .= ' Done';
+                    }
                 }
 
                 fprintf(STDOUT, "\r  %-78s", mb_substr($line, 0, 78));
