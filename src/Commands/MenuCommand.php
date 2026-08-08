@@ -397,13 +397,20 @@ final class MenuCommand extends Command
         $orphans = [];
         foreach ($all as $dl) {
             $filePath = $dl['file_path'] ?? '';
-            if (file_exists($filePath) && filesize($filePath) > 0) {
-                $fileSize = filesize($filePath);
+            $partPath = $filePath . '.part';
+            $onDisk = file_exists($partPath) ? $partPath : (file_exists($filePath) ? $filePath : null);
+
+            if ($onDisk !== null && filesize($onDisk) > 0) {
+                $fileSize = filesize($onDisk);
                 $expected = (int)($dl['file_size'] ?? 0);
-                if ($expected > 0 && $fileSize < $expected) {
-                    $orphans[] = $dl;
-                } else {
+                if ($expected > 0 && $fileSize >= $expected) {
+                    if ($onDisk === $partPath) {
+                        if (file_exists($filePath)) @unlink($filePath);
+                        @rename($partPath, $filePath);
+                    }
                     $db->updateDownload($dl['id'], ['status' => 'completed']);
+                } else {
+                    $orphans[] = $dl;
                 }
             } else {
                 $db->updateDownload($dl['id'], ['status' => 'failed']);
@@ -416,7 +423,10 @@ final class MenuCommand extends Command
 
         foreach ($orphans as $i => $dl) {
             $filePath = $dl['file_path'] ?? '';
-            $partialSize = file_exists($filePath) ? filesize($filePath) : 0;
+            $partPath = $filePath . '.part';
+            $partialSize = 0;
+            if (file_exists($partPath)) $partialSize = filesize($partPath);
+            elseif (file_exists($filePath)) $partialSize = filesize($filePath);
             echo "  " . Theme::cyan((string)($i + 1)) . ". " . Theme::bold($dl['name'] ?? 'unknown');
             echo " — " . Theme::dim(ProgressBar::formatBytes($partialSize) . " downloaded");
             echo " — " . Theme::dim($dl['url'] ?? '') . "\n";
@@ -432,7 +442,8 @@ final class MenuCommand extends Command
                     $dl['name'],
                     $dl['hash_value'] ?: null,
                     $dl['hash_type'] ?: 'sha256',
-                    $dl['category'] ?: null
+                    $dl['category'] ?: null,
+                    $dl['fallback_urls'] ?? []
                 );
             }
         } else {
