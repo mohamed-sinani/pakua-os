@@ -36,7 +36,7 @@ final class Table
 
         $headerLine = '  │';
         foreach ($headers as $i => $h) {
-            $headerLine .= ' ' . Theme::bold(self::pad($h, $widths[$i])) . '│';
+            $headerLine .= ' ' . Theme::bold(self::pad($h, $widths[$i] - 1)) . '│';
         }
         echo $headerLine . "\n";
         echo $sep . "\n";
@@ -44,7 +44,7 @@ final class Table
         foreach ($rows as $row) {
             $line = '  │';
             foreach ($row as $i => $cell) {
-                $line .= ' ' . self::pad((string)$cell, $widths[$i]) . '│';
+                $line .= ' ' . self::pad((string)$cell, $widths[$i] - 1) . '│';
             }
             echo $line . "\n";
         }
