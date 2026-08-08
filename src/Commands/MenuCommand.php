@@ -167,7 +167,7 @@ final class MenuCommand extends Command
         if ($url === '') return;
         $name = Menu::prompt('Filename', basename(parse_url($url, PHP_URL_PATH) ?: 'download'));
 
-        $dl->download($url, $name, null, 'sha256', 'os');
+        $dl->download($url, $name, null, 'sha256', 'other');
     }
 
     // ─── History ───────────────────────────────────────────────────────

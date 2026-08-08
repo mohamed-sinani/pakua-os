@@ -31,7 +31,7 @@ final class DownloadCommand extends Command
         $output->writeln("\n  " . Theme::bold('Starting download...'));
 
         $dl = new Downloader();
-        $path = $dl->download($url, $name, null, 'sha256', 'os');
+        $path = $dl->download($url, $name, null, 'sha256', 'other');
 
         if ($path) {
             $output->writeln(Theme::success("\n  Download complete!") . "\n");
