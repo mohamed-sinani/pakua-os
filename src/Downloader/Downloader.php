@@ -17,20 +17,28 @@ final class Downloader
     private ?string $category = null;
     private ?int $currentDownloadId = null;
     private string $lastError = '';
+    private string $currentUrl = '';
 
     public function __construct(?string $baseDir = null)
     {
         $this->baseDir = $baseDir ?? $this->getDefaultBaseDir();
     }
 
-    private function getDefaultBaseDir(): string
+    private function getHomeDir(): string
     {
         if (PHP_OS_FAMILY === 'Windows') {
-            $home = getenv('USERPROFILE') ?: getenv('HOMEDRIVE') . getenv('HOMEPATH');
-            return $home . '\Downloads\PakuaOS';
+            return getenv('USERPROFILE') ?: getenv('HOMEDRIVE') . getenv('HOMEPATH');
         }
-        $home = $_SERVER['HOME'] ?? getenv('HOME');
-        return $home . '/Downloads/PakuaOS';
+        return $_SERVER['HOME'] ?? getenv('HOME') ?? sys_get_temp_dir();
+    }
+
+    private function getDefaultBaseDir(): string
+    {
+        $setting = Database::instance()->setting('download_dir');
+        if (!empty($setting)) {
+            return rtrim(str_replace('~/', $this->getHomeDir() . '/', $setting), '/\\');
+        }
+        return $this->getHomeDir() . '/Downloads/PakuaOS';
     }
 
     private function resolveDir(?string $category): string
