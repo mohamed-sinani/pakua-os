@@ -101,8 +101,20 @@ final class SearchCommand extends Command
             echo "\n";
 
             if (Menu::confirm("Start download?")) {
+                if (!empty($r['manual'])) {
+                    echo "\n  " . Theme::warning("This OS cannot be downloaded automatically.") . "\n";
+                    echo "  " . Theme::dim("Use the " . ($r['source'] ?? 'vendor') . " on the target machine.") . "\n\n";
+                    return Command::SUCCESS;
+                }
                 $dl = new \PakuaOS\Downloader\Downloader();
-                $dl->download($r['url'], $r['name'] . ' ' . $r['platform'], null, 'sha256', 'os');
+                $dl->download(
+                    $r['url'],
+                    $r['name'] . ' ' . $r['platform'],
+                    $r['hash_value'] ?? null,
+                    strtolower($r['hash_type'] ?? 'sha256'),
+                    'os',
+                    $r['fallback_urls'] ?? []
+                );
             }
         }
 

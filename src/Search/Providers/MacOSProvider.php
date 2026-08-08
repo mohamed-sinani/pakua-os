@@ -16,20 +16,17 @@ final class MacOSProvider implements Provider
             [
                 'name' => 'macOS Sequoia 15',
                 'architectures' => ['arm64', 'x64'],
-                'source' => 'Apple Official',
-                'verified' => true,
+                'source' => 'Mac App Store',
             ],
             [
                 'name' => 'macOS Sonoma 14',
                 'architectures' => ['arm64', 'x64'],
-                'source' => 'Apple Official',
-                'verified' => true,
+                'source' => 'Mac App Store',
             ],
             [
                 'name' => 'macOS Ventura 13',
                 'architectures' => ['arm64', 'x64'],
-                'source' => 'Apple Official',
-                'verified' => true,
+                'source' => 'Mac App Store',
             ],
         ];
 
@@ -44,9 +41,11 @@ final class MacOSProvider implements Provider
                     'version'   => $v['name'],
                     'platform'  => $arch === 'arm64' ? 'Apple Silicon (ARM64)' : 'Intel (x64)',
                     'type'      => 'IPSW Restore',
-                    'url'       => 'https://developer.apple.com/services-account/QH2U3MM9CB/downloadws/listData.action',
+                    'url'       => 'https://support.apple.com/guide/mac-help/',
                     'source'    => $v['source'],
-                    'verified'  => $v['verified'],
+                    'verified'  => false,
+                    'manual'    => true,
+                    'desc'      => 'Distributed via the Mac App Store — requires an Apple ID; PakuaOS cannot fetch IPSW files directly.',
                     'hash_type' => 'SHA256',
                     'category'  => 'macos',
                     'provider'  => $this->getName(),

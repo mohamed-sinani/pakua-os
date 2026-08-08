@@ -379,11 +379,25 @@ final class MenuCommand extends Command
         echo "  " . Theme::bold(Theme::cyan('Verified')) . ':  ' . (($r['verified'] ?? false) ? Theme::success('✓ Verified') : Theme::warning('Unverified — check before installing')) . "\n";
         echo "\n";
 
+        if (!empty($r['manual'])) {
+            echo "  " . Theme::warning("This OS cannot be downloaded automatically.") . "\n";
+            echo "  " . Theme::dim("Use the " . ($r['source'] ?? 'vendor') . " on the target machine.") . "\n\n";
+            Menu::prompt('Press Enter to continue');
+            return;
+        }
+
         if (Menu::confirm("Start download?")) {
             $dl = new Downloader();
             $name = ($r['name'] ?? 'download') . ' ' . ($r['platform'] ?? '');
             $fallbackUrls = $r['fallback_urls'] ?? [];
-            $dl->download($r['url'], $name, null, 'sha256', $downloadCategory, $fallbackUrls);
+            $dl->download(
+                $r['url'],
+                $name,
+                $r['hash_value'] ?? null,
+                strtolower($r['hash_type'] ?? 'sha256'),
+                $downloadCategory,
+                $fallbackUrls
+            );
         }
     }
 
