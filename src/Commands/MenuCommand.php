@@ -242,7 +242,8 @@ final class MenuCommand extends Command
                     $dlRec['name'],
                     $dlRec['hash_value'] ?: null,
                     $dlRec['hash_type'] ?: 'sha256',
-                    $dlRec['category'] ?: null
+                    $dlRec['category'] ?: null,
+                    $dlRec['fallback_urls'] ?? []
                 );
             }
         } else {
