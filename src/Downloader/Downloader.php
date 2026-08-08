@@ -77,33 +77,45 @@ final class Downloader
             $filename .= '.iso';
         }
         $filePath = $dir . '/' . $filename;
+        $partPath = $filePath . '.part';
 
         $db = Database::instance();
 
-        $startByte = 0;
-        if (file_exists($filePath)) {
-            $startByte = filesize($filePath);
-            $existing = $db->getDownloadsByStatus('downloading');
-            $existing = array_filter($existing, fn($d) => ($d['file_path'] ?? '') === $filePath);
-            if (!empty($existing)) {
-                echo "  " . Theme::info("Resuming from " . ProgressBar::formatBytes($startByte) . " (previous session)") . "\n\n";
-            } else {
-                echo "  " . Theme::info("Resuming from " . ProgressBar::formatBytes($startByte)) . "\n\n";
+        // Already fully downloaded and recorded → skip.
+        foreach ($db->getAllDownloads() as $existing) {
+            if (($existing['file_path'] ?? '') === $filePath
+                && ($existing['status'] ?? '') === 'completed'
+                && file_exists($filePath)) {
+                echo "  " . Theme::info("File already downloaded:") . "\n";
+                echo "  " . Theme::cyan($filePath) . "\n\n";
+                return $filePath;
             }
         }
 
+        $startByte = 0;
+        if (file_exists($partPath)) {
+            $startByte = filesize($partPath);
+        } elseif (file_exists($filePath)) {
+            $startByte = filesize($filePath);
+        }
+        if ($startByte > 0) {
+            echo "  " . Theme::info("Resuming from " . ProgressBar::formatBytes($startByte)) . "\n\n";
+        }
+
         // Register download in DB as 'downloading'
+        $this->currentUrl = $url;
         $dlId = $db->addDownload([
-            'name'       => basename($filePath),
-            'url'        => $url,
-            'file_path'  => $filePath,
-            'file_size'  => 0,
-            'downloaded' => $startByte,
-            'status'     => 'downloading',
-            'hash_type'  => $hashAlgo,
-            'hash_value' => $expectedHash ?? '',
-            'source'     => parse_url($url, PHP_URL_HOST) ?? '',
-            'category'   => $category ?? 'other',
+            'name'          => basename($filePath),
+            'url'           => $url,
+            'file_path'     => $filePath,
+            'file_size'     => 0,
+            'downloaded'    => $startByte,
+            'status'        => 'downloading',
+            'hash_type'     => $hashAlgo,
+            'hash_value'    => $expectedHash ?? '',
+            'source'        => parse_url($url, PHP_URL_HOST) ?? '',
+            'category'      => $category ?? 'other',
+            'fallback_urls' => $fallbackUrls,
         ]);
 
         // Store for use in tryDownload
@@ -123,7 +135,7 @@ final class Downloader
                 echo "  " . Theme::dim("Trying next source (" . ($attempt + 1) . "/" . count($allUrls) . ")...") . "\n\n";
             }
 
-            $result = $this->tryDownload($tryUrl, $filePath, $startByte, $isLast);
+            $result = $this->tryDownload($tryUrl, $partPath, $filePath, $startByte, $isLast);
             if ($result !== null) {
                 return $result;
             }
@@ -141,7 +153,7 @@ final class Downloader
         return null;
     }
 
-    private function tryDownload(string $url, string $filePath, int $startByte, bool $isLast = false): ?string
+    private function tryDownload(string $url, string $writePath, string $finalPath, int $startByte, bool $isLast = false): ?string
     {
         // Get file size via HEAD request
         $headCh = curl_init($url);
@@ -164,6 +176,14 @@ final class Downloader
             ]);
         }
 
+        // Nothing left to fetch — the on-disk file already matches the source.
+        if ($totalSize > 0 && $startByte >= $totalSize && file_exists($writePath)) {
+            return $this->finalizeDownload($writePath, $finalPath);
+        }
+
+        $resume = ($startByte > 0 && ($totalSize <= 0 || $startByte < $totalSize));
+        $resumeFrom = $resume ? $startByte : 0;
+
         $ch = curl_init();
         curl_setopt_array($ch, [
             CURLOPT_URL            => $url,
@@ -177,11 +197,11 @@ final class Downloader
             CURLOPT_SSL_VERIFYHOST => 2,
             CURLOPT_CONNECTTIMEOUT => 30,
             CURLOPT_TIMEOUT        => 0,
-            CURLOPT_RESUME_FROM    => $startByte,
+            CURLOPT_RESUME_FROM    => $resumeFrom,
             CURLOPT_BUFFERSIZE     => 65536,
         ]);
 
-        $fp = fopen($filePath, $startByte > 0 ? 'ab' : 'wb');
+        $fp = fopen($writePath, $resume ? 'ab' : 'wb');
         $unknownSize = ($totalSize <= 0);
 
         while (ob_get_level()) ob_end_flush();
@@ -192,8 +212,9 @@ final class Downloader
         $downloaded = $startByte;
         $lastDraw = 0;
         $dlStartTime = microtime(true);
+        $startOffset = $startByte;
 
-        curl_setopt($ch, CURLOPT_WRITEFUNCTION, function ($ch, $data) use ($fp, $totalSize, $unknownSize, $startByte, &$downloaded, &$lastDraw, $dlStartTime) {
+        $writeFn = function ($ch, $data) use (&$fp, $totalSize, $unknownSize, &$startOffset, &$downloaded, &$lastDraw, &$dlStartTime) {
             $len = strlen($data);
             fwrite($fp, $data);
             $downloaded += $len;
@@ -202,7 +223,7 @@ final class Downloader
             if ($now - $lastDraw >= 0.15 || (!$unknownSize && $downloaded >= $totalSize)) {
                 $lastDraw = $now;
                 $elapsed = $now - $dlStartTime;
-                $bytesThisSession = $downloaded - $startByte;
+                $bytesThisSession = $downloaded - $startOffset;
                 $speed = $elapsed > 0.5 ? $bytesThisSession / $elapsed : 0;
 
                 if ($unknownSize) {
@@ -233,14 +254,37 @@ final class Downloader
             }
 
             return $len;
-        });
+        };
+
+        curl_setopt($ch, CURLOPT_WRITEFUNCTION, $writeFn);
 
         echo "\n";
         flush();
 
-        $success = curl_exec($ch);
-        $error = curl_error($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $success = false;
+        $error = '';
+        $httpCode = 0;
+        for ($attemptNo = 0; $attemptNo < 2; $attemptNo++) {
+            $success = curl_exec($ch);
+            $error = curl_error($ch);
+            $errno = curl_errno($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+            if ($resume && $errno === CURLE_HTTP_RANGE_ERROR) {
+                // Server ignored the Range header — restart from scratch.
+                fclose($fp);
+                $fp = fopen($writePath, 'wb');
+                $resume = false;
+                $startOffset = 0;
+                $downloaded = 0;
+                $lastDraw = 0;
+                $dlStartTime = microtime(true);
+                curl_setopt($ch, CURLOPT_RESUME_FROM, 0);
+                curl_setopt($ch, CURLOPT_WRITEFUNCTION, $writeFn);
+                continue;
+            }
+            break;
+        }
         curl_close($ch);
         fclose($fp);
 
@@ -250,14 +294,24 @@ final class Downloader
             $this->lastError = $error ?: "HTTP {$httpCode}";
             if ($this->currentDownloadId) {
                 Database::instance()->updateDownload($this->currentDownloadId, [
-                    'status' => 'resumable',
-                    'downloaded' => $startByte + (int)@filesize($filePath),
+                    'status'     => 'resumable',
+                    'downloaded' => (int)@filesize($writePath),
                 ]);
             }
             return null;
         }
 
-        $finalSize = filesize($filePath);
+        return $this->finalizeDownload($writePath, $finalPath);
+    }
+
+    private function finalizeDownload(string $writePath, string $finalPath): string
+    {
+        if ($writePath !== $finalPath && file_exists($writePath)) {
+            if (file_exists($finalPath)) @unlink($finalPath);
+            @rename($writePath, $finalPath);
+        }
+        $savedPath = file_exists($finalPath) ? $finalPath : $writePath;
+
         fprintf(STDOUT, "\r  %-78s", str_repeat(' ', 78));
         fprintf(STDOUT, "\r  [████████████████████████████████████████] 100%% Done\n");
         flush();
@@ -265,17 +319,17 @@ final class Downloader
         $verified = false;
         if ($this->expectedHash) {
             echo Theme::separator("Verification") . "\n";
-            $verified = HashVerifier::verify($filePath, $this->expectedHash, $this->hashAlgo);
+            $verified = HashVerifier::verify($savedPath, $this->expectedHash, $this->hashAlgo);
             if ($verified) {
                 echo "  " . Theme::success("✔ Integrity verified.") . "\n";
                 echo "  " . Theme::success("✔ Checksum matches expected value.") . "\n\n";
             } else {
-                echo "  " . Theme::warning("⚠ Checksum could not be verified") . "\n";
-                echo "  " . Theme::dim("No local reference checksum available for comparison") . "\n\n";
+                echo "  " . Theme::warning("⚠ Checksum mismatch!") . "\n";
+                echo "  " . Theme::dim("Expected {$this->hashAlgo}: {$this->expectedHash}") . "\n\n";
             }
         }
 
-        $size = filesize($filePath);
+        $size = filesize($savedPath);
         echo Theme::successBox("Download complete.") . "\n";
         if (!empty($this->expectedHash)) {
             if ($verified) {
@@ -287,33 +341,34 @@ final class Downloader
         echo Theme::successBox("Ready to install.") . "\n";
         echo "\n";
         echo "  " . Theme::bold(Theme::green("Saved to:")) . "\n\n";
-        echo "  " . Theme::cyan($filePath) . "\n";
+        echo "  " . Theme::cyan($savedPath) . "\n";
         echo "  " . Theme::dim("Size: " . ProgressBar::formatBytes($size)) . "\n\n";
 
         if ($this->currentDownloadId) {
             Database::instance()->updateDownload($this->currentDownloadId, [
-                'name'       => basename($filePath),
-                'file_path'  => $filePath,
+                'name'       => basename($savedPath),
+                'file_path'  => $savedPath,
                 'file_size'  => $size,
                 'downloaded' => $size,
                 'status'     => 'completed',
             ]);
         } else {
             Database::instance()->addDownload([
-                'name'       => basename($filePath),
-                'url'        => $url,
-                'file_path'  => $filePath,
-                'file_size'  => $size,
-                'downloaded' => $size,
-                'status'     => 'completed',
-                'hash_type'  => $this->hashAlgo,
-                'hash_value' => $this->expectedHash ?? '',
-                'source'     => parse_url($url, PHP_URL_HOST) ?? '',
-                'category'   => $this->category ?? 'other',
+                'name'          => basename($savedPath),
+                'url'           => $this->currentUrl,
+                'file_path'     => $savedPath,
+                'file_size'     => $size,
+                'downloaded'    => $size,
+                'status'        => 'completed',
+                'hash_type'     => $this->hashAlgo,
+                'hash_value'    => $this->expectedHash ?? '',
+                'source'        => parse_url($this->currentUrl, PHP_URL_HOST) ?? '',
+                'category'      => $this->category ?? 'other',
+                'fallback_urls' => [],
             ]);
         }
 
-        return $filePath;
+        return $savedPath;
     }
 
     private function sanitizeFilename(string $name): string
