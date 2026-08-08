@@ -45,6 +45,9 @@ final class Menu
             $input = self::readLine();
             if ($input === null) return $allowBack ? null : null;
             if ($input === '' && $allowBack) return null;
+            if ($input === '') {
+                continue;
+            }
             if (is_numeric($input)) {
                 $choice = (int)$input;
                 if ($allowBack && $choice === 0) return null;
